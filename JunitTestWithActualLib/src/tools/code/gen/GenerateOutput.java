@@ -85,16 +85,14 @@ public class GenerateOutput {
      * 
      * <pre>
      * public GenerateOutput(Class<?> clss, String packageName,
-     * 	    String outputClassName, boolean methodShouldSort,
-     * 	    String... location) <blockquote>throws</blockquote> Exception
+     * 	    String outputClassName, boolean methodShouldSort, String directory)
+     * 	    throws Exception
      * </pre>
      * 
      * <p>
      * Gets Test class name, file location, package name and output class name;
-     * This class is the main source to generate all related output. location...
-     * has 3 values. Initial values are: location[0] =
-     * System.getProperty("user.dir"), location[1] = "\\src", location[2] =
-     * "\\tools\\code\\gen\\output\\"
+     * This class is the main source to generate all related output. directory
+     * contains the physical path of output folder
      * </p>
      * 
      * @param clz
@@ -105,42 +103,27 @@ public class GenerateOutput {
      *            - a class name.
      * @param methodShouldSort
      *            - true or false.
-     * @param location
-     *            [0] - directory location
-     * @param location
-     *            [1] - source location
-     * @param location
-     *            [2] - output folder
+     * @param directory
+     *            - physical path of output class
      * @throws Exception
      * 
      * @author Shohel Shamim
      */
     public GenerateOutput(Class<?> clss, String packageName,
-	    String outputClassName, boolean methodShouldSort,
-	    String... location) throws Exception {
-	if (location.length != 3) {
-	    throw new Exception(
-		    "Must have source Directory, Source Folder and Output Folder Location...");
-	} else {
-	    this.fileLocation = "";
-	    for (int i = 0; i < 3; i++) {
-		if (location[i].equalsIgnoreCase("")) {
-		    throw new Exception(
-			    "You must fill all the required parameter of File location...");
-		}
-		this.fileLocation += location[i];
-	    }
-	    this.packageName = packageName;
-	    this.formatPackageName = "package " + this.packageName + ";\n\n";
-	    this.outputClassName = outputClassName;
-	    this.outputClassFile = outputClassName + ".java";
-	    this.generateCode = new GenerateCode(new ClassRecords(clss),
-		    this.outputClassName, methodShouldSort, location);
-	    this.externalMethodName = "extendedMethod";
-	    this.externalMethodCode = "protected static void "
-		    + this.externalMethodName + "("
-		    + this.generateCode.getMethodParameter(false) + ")";
-	}
+	    String outputClassName, boolean methodShouldSort, String directory)
+	    throws Exception {
+	this.fileLocation = directory;
+	this.packageName = packageName;
+	this.formatPackageName = "package " + this.packageName + ";\n\n";
+	this.outputClassName = outputClassName;
+	this.outputClassFile = outputClassName + ".java";
+	this.generateCode = new GenerateCode(new ClassRecords(clss),
+		this.outputClassName, methodShouldSort, directory);
+	this.externalMethodName = "extendedMethod";
+	this.externalMethodCode = "protected static void "
+		+ this.externalMethodName + "("
+		+ this.generateCode.getMethodParameter(false) + ")";
+	// }
     }
 
     /**

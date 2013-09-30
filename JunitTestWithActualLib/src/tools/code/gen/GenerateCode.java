@@ -82,8 +82,6 @@ public class GenerateCode implements AnnotaionList {
      * class
      */
     private boolean hasParameterSuppliedByForOutputClass = false;
-    /* Main folder of source code; not src; src container */
-    private final String mainDirectory;
     /* true to sort method list otherwise unsorted */
     private final boolean methodShouldSort;
     /*
@@ -110,8 +108,6 @@ public class GenerateCode implements AnnotaionList {
      * class
      */
     private final String paramSuppMethodName = "pa";
-    /* source folder; default src */
-    private final String sourceDirectory;
     /* static Rule variables; placed in output class */
     private List<String> staticRuleFields = new ArrayList<String>();
 
@@ -120,27 +116,22 @@ public class GenerateCode implements AnnotaionList {
      * 
      * <pre>
      * public GenerateCode(ClassRecords classRecords, String outputClassName,
-     * 	    boolean methodShouldSort, String... location)
+     * 	    boolean methodShouldSort, String directory)
      * </pre>
      * 
      * <p>
      * Generates output code by using ClassRecords object and save them to the
-     * file named that is passed by parameter outputClassName. location has 3
-     * length, directory, source and output.
+     * file named that is passed by parameter outputClassName.
      * </p>
      * 
      * @author Shohel Shamim
      */
     public GenerateCode(ClassRecords classRecords, String outputClassName,
-	    boolean methodShouldSort, String... location) {
+	    boolean methodShouldSort, String directory) {
 	this.classRecords = classRecords;
 	this.outputClassName = outputClassName;
 	this.methodShouldSort = methodShouldSort;
-	// String...location: directory location; 0 -> Directory; 1 - > Source
-	// folder; 2 -> Output
-	this.mainDirectory = location[0];
-	this.sourceDirectory = location[1];
-	this.outputDirectory = location[2];
+	this.outputDirectory = directory;
 	// Lookup class for output
 	traverseClasses(this.classRecords);
     }
@@ -485,25 +476,6 @@ public class GenerateCode implements AnnotaionList {
     }
 
     /**
-     * <li><strong><i>getMainDirectoryLocationAsString</i></strong></li>
-     * 
-     * <pre>
-     * public String getMainDirectoryLocationAsString()
-     * </pre>
-     * 
-     * <p>
-     * Return Main Directory location[0].
-     * </p>
-     * 
-     * @return String return directory location.
-     * 
-     * @author Shohel Shamim
-     */
-    public String getMainDirectoryLocationAsString() {
-	return this.mainDirectory;
-    }
-
-    /**
      * <li><strong><i>getMethodParameter</i></strong></li>
      * 
      * <pre>
@@ -581,7 +553,7 @@ public class GenerateCode implements AnnotaionList {
      * </pre>
      * 
      * <p>
-     * Return Output Directory location[2].
+     * Return Output Directory.
      * </p>
      * 
      * @return String - return output package folder.
@@ -727,24 +699,6 @@ public class GenerateCode implements AnnotaionList {
      */
     public String getParamSuppMethodName() {
 	return this.paramSuppMethodName;
-    }
-
-    /**
-     * <li><strong><i>getSourceDirectoryAsString</i></strong></li>
-     * 
-     * <pre>
-     * public String getSourceDirectoryAsString()
-     * </pre>
-     * 
-     * <p>
-     * Return Source Directory location[1].
-     * </p>
-     * 
-     * @return String - return source location.
-     * @author Shohel Shamim
-     */
-    public String getSourceDirectoryAsString() {
-	return this.sourceDirectory;
     }
 
     /**

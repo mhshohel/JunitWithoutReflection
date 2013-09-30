@@ -47,6 +47,11 @@ public class MainClass {
      * Keep the list of all non test classes
      */
     private static List<Class<?>> nonTestClasses = new ArrayList<Class<?>>();
+    /*
+     * Save output class directory information, so that it can print at the end
+     * of code generation
+     */
+    private static List<String> outputClassDirectory = new ArrayList<String>();
 
     public static void main(String[] args) {
 	try {
@@ -122,24 +127,27 @@ public class MainClass {
 		System.out.println("No Test classes found to Generate code.");
 	    } else {
 		for (Class<?> clss : testClasses) {
-		    // clss = cls;
-		    /*
-		     * Character that separates components of a file path. This
-		     * is "/" on UNIX and "\" on Windows.
-		     */
-		    String directory = System.getProperty("user.dir");
-		    String source = fileSeparator + "src";
-		    String output = fileSeparator + "tools" + fileSeparator
-			    + "code" + fileSeparator + "gen" + fileSeparator
-			    + "output" + fileSeparator;
 		    /*
 		     * Changed to class original name instead of hard coded
 		     * "OutputClass"
 		     */
 		    String outputClassName = clss.getSimpleName().concat(
 			    "Output");
-		    String packageName = MainClass.class.getPackage().getName()
-			    + ".output";
+		    String packageName = clss.getPackage().getName();
+		    // MainClass.class.getPackage().getName()+ ".output";
+
+		    /*
+		     * Character that separates components of a file path. This
+		     * is "/" on UNIX and "\" on Windows.
+		     */
+
+		    String directory = clss.getResource("").getPath()
+			    .substring(1); // Physical Path; removed first char
+		    if (fileSeparator.equalsIgnoreCase("\\")) {
+			directory = directory.replaceAll("/", fileSeparator
+				+ fileSeparator);
+		    }
+
 		    /*
 		     * If isMethodSorted is true then method will be sorted
 		     * otherwise it can be unsorted. In future Junit 4.11 there
@@ -155,23 +163,30 @@ public class MainClass {
 		    // Output generation begins;
 		    GenerateOutput outputClass = new GenerateOutput(clss,
 			    packageName, outputClassName, methodShouldSort,
-			    directory, source, output);
+			    directory);
 		    /*
 		     * outputClass.execute() to write code in file; it returns
 		     * code as output
 		     */
-		    System.out.println("\n******Generating Output Code******");
+		    System.out.println("\n****** Generating Output Code for "
+			    + clss.getName() + " ******");
 		    // System.out.println(outputClass.execute());
 		    outputClass.execute();
 		    outputClass = null;
 		    System.out
-			    .println("\n******Code Generation Complete******");
-		    System.out.println("Output file: \n" + directory + source
-			    + output);
+			    .println("\n****** Code Generation Complete ******");
+		    outputClassDirectory.add(directory + outputClassName
+			    + ".java");
 		}
 	    }
 	} catch (Exception e) {
 	    System.err.println(e.getMessage());
+	} finally {
+	    System.out
+		    .println("\n\n\n****** List of Generated code with physical path ******");
+	    for (String vals : outputClassDirectory) {
+		System.out.println(vals);
+	    }
 	}
     }
 
