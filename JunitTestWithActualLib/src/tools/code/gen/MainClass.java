@@ -20,16 +20,25 @@
 package tools.code.gen;
 
 import java.io.File;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Result;
-import org.junit.runner.notification.Failure;
-
-import basicTestCase.BasicTest;
 
 public class MainClass {
+    /*
+     * Store file info
+     */
+    private static File file = null;
+    /*
+     * Kepp All classes
+     */
+    private static Set<Class<?>> allClasses = new HashSet<Class<?>>();
     /*
      * Keep the list of all test classes
      */
@@ -40,26 +49,54 @@ public class MainClass {
     private static List<Class<?>> nonTestClasses = new ArrayList<Class<?>>();
 
     public static void main(String[] args) {
-	List<String> packageLocation = new ArrayList<String>();
-	// must check dir...
-	if (args.length == 0) {
-	    System.err
-		    .println("You must provide the package name with location. \nex: graph or graph.test");
-	    System.exit(-1);
-	}
-
-	File file = new File("D:\test");
-	if (file.isDirectory()) {
-
-	}
-
-	String fileSeparator = System.getProperty("file.separator");
-	for (int i = 0; i < args.length; i++) {
-	    packageLocation.add(args[i].replace('.', '/'));
-	}
-
 	try {
-	    Class<?> clss = BasicTest.class;
+	    // This version can only take one directory location
+	    if (args.length == 0) {
+		System.err
+			.println("You must provide the folder name with location, not the package names. "
+				+ "\nex: C:\\Temp\\src");
+		System.err
+			.println("You can also provide a specific Test class name as second parameter. \n"
+				+ "ex: C:\\Temp\\src a.b.Test (without .class extension)");
+		System.exit(-1);
+	    }
+
+	    String fileLocation = args[0].trim();
+	    // Get specific class name
+	    String nafeFilter = (args.length > 1) ? args[1].trim() : "";
+	    file = new File(fileLocation);
+	    getListOfClassesFromDirectory(file, nafeFilter, "");
+
+	    String fileSeparator = System.getProperty("file.separator");
+
+	    for (Class<?> cls : allClasses) {
+		// Verify JUnit Test class first, if there JUnit fails to run
+		// Test
+		// case then it will not generate the output
+		Result result = null;
+		try {
+		    System.out
+			    .println("******Run Test Case - JUnit 4.0******\n");
+		    result = JUnitCore.runClasses(cls);
+		    System.out
+			    .println("\n******Test Case Run Complete******\n\n");
+		} catch (Exception e) {
+
+		}
+		if (result != null && !result.getFailures().isEmpty()) {
+		    nonTestClasses.add(cls);
+		    System.err.println(cls.getName()
+			    + " is not a JUnit Test class");
+		} else {
+		    testClasses.add(cls);
+		    System.out.println("Loaded JUnit Test class: "
+			    + cls.getName());
+		}
+	    }
+
+	    // Class<?> clss = null;
+	    // BasicTest.class;
+	    // BasicTest.class;
 	    // SuppliedByTest.class
 	    // ParameterSuppliedByClassTest.class;
 	    // ParametarizedTest.class
@@ -81,65 +118,57 @@ public class MainClass {
 	    // TestDFS
 	    // TestDirectedGraph
 
-	    // Verify JUnit Test class first, if there JUnit fails to run Test
-	    // case then it will not generate the output
-	    System.out.println("******Run Test Case - JUnit 4.0******\n");
-	    Result result = null;
-	    try {
-		result = JUnitCore.runClasses(clss);
-	    } catch (Exception e) {
-		System.err.println("Not a test class");
-	    }
-
-	    // result = JUnitCore.runClasses(BasicTest.class);
-	    if (result != null && !result.getFailures().isEmpty()) {
-		for (Failure failure : result.getFailures()) {
-		    System.err.println(failure.toString());
-		}
-		System.out.println("Code Generation Fail; Errors found in "
-			+ clss.getSimpleName() + ".class");
+	    if (testClasses.isEmpty()) {
+		System.out.println("No Test classes found to Generate code.");
 	    } else {
-		System.out.println("\n******Test Case Run Complete******\n\n");
-		// Character that separates components of a file path. This is
-		// "/"
-		// on UNIX and "\" on Windows.
-		String directory = System.getProperty("user.dir");
-		String source = fileSeparator + "src";
-		String output = fileSeparator + "tools" + fileSeparator
-			+ "code" + fileSeparator + "gen" + fileSeparator
-			+ "output" + fileSeparator;
-		// Changed to class original name instead of hardcoded
-		// "OutputClass"
-		String outputClassName = clss.getSimpleName().concat("Output");// "OutputClass";
-		String packageName = MainClass.class.getPackage().getName()
-			+ ".output";
-		// If isMethodSorted is true then method will be sorted
-		// otherwise it
-		// can be unsorted. In future Junit 4.11 there is a updated to
-		// sort
-		// method. However, 4.1 - 4.10 it is not available. If you run
-		// Junit
-		// then you may see method is sometimes read according to
-		// alphabetical order but most of the time unsorted. That's why
-		// for
-		// long list of methods it is often creates confusion because
-		// order
-		// of method not match, until you run 2-3 time you will get
-		// sorted.
-		boolean methodShouldSort = true; // or false
-		// Output generation begins;
-		GenerateOutput outputClass = new GenerateOutput(clss,
-			packageName, outputClassName, methodShouldSort,
-			directory, source, output);
-		// outputClass.execute() to write code in file; it returns code
-		// as output
-		System.out.println("\n******Generating Output Code******");
-		// System.out.println(outputClass.execute());
-		outputClass.execute();
-		outputClass = null;
-		System.out.println("\n******Code Generation Complete******");
-		System.out.println("Output file: \n" + directory + source
-			+ output);
+		for (Class<?> clss : testClasses) {
+		    // clss = cls;
+		    /*
+		     * Character that separates components of a file path. This
+		     * is "/" on UNIX and "\" on Windows.
+		     */
+		    String directory = System.getProperty("user.dir");
+		    String source = fileSeparator + "src";
+		    String output = fileSeparator + "tools" + fileSeparator
+			    + "code" + fileSeparator + "gen" + fileSeparator
+			    + "output" + fileSeparator;
+		    /*
+		     * Changed to class original name instead of hard coded
+		     * "OutputClass"
+		     */
+		    String outputClassName = clss.getSimpleName().concat(
+			    "Output");
+		    String packageName = MainClass.class.getPackage().getName()
+			    + ".output";
+		    /*
+		     * If isMethodSorted is true then method will be sorted
+		     * otherwise it can be unsorted. In future Junit 4.11 there
+		     * is a updated to sort method. However, 4.1 - 4.10 it is
+		     * not available. If you run Junit then you may see method
+		     * is sometimes read according to alphabetical order but
+		     * most of the time unsorted. That's why for long list of
+		     * methods it is often creates confusion because order of
+		     * method not match, until you run 2-3 time you will get
+		     * sorted.
+		     */
+		    boolean methodShouldSort = true; // or false
+		    // Output generation begins;
+		    GenerateOutput outputClass = new GenerateOutput(clss,
+			    packageName, outputClassName, methodShouldSort,
+			    directory, source, output);
+		    /*
+		     * outputClass.execute() to write code in file; it returns
+		     * code as output
+		     */
+		    System.out.println("\n******Generating Output Code******");
+		    // System.out.println(outputClass.execute());
+		    outputClass.execute();
+		    outputClass = null;
+		    System.out
+			    .println("\n******Code Generation Complete******");
+		    System.out.println("Output file: \n" + directory + source
+			    + output);
+		}
 	    }
 	} catch (Exception e) {
 	    System.err.println(e.getMessage());
@@ -147,10 +176,10 @@ public class MainClass {
     }
 
     /**
-     * <li><strong><i>getListOfFileFromFolder</i></strong></li>
+     * <li><strong><i>getListOfClassesFromDirectory</i></strong></li>
      * 
      * <pre>
-     * private static void getListOfFileFromFolder(final File folder)
+     * private static void getListOfClassesFromDirectory(final File folder, final String pack)
      * </pre>
      * 
      * <p>
@@ -159,10 +188,41 @@ public class MainClass {
      * 
      * @param folder
      *            - entry point of the folder.
+     * @param nameFilter
+     *            - provide a specific class name.
+     * @param pack
+     *            - contains package names.
      * 
      * @author Shohel Shamim
      */
-    private static void getListOfFileFromFolder(final File folder) {
-
+    private static void getListOfClassesFromDirectory(final File folder,
+	    final String nameFilter, final String pack) {
+	String pac = (pack.trim().equalsIgnoreCase("") ? "" : pack.concat("."));
+	for (final File fileEntry : folder.listFiles()) {
+	    if (fileEntry.isDirectory()) {
+		getListOfClassesFromDirectory(fileEntry, nameFilter,
+			pac.concat(fileEntry.getName()));
+	    } else {
+		if (fileEntry.getName().endsWith(".class")) {
+		    try {
+			URL url = file.toURI().toURL();
+			URL[] urls = new URL[] { url };
+			String cls = pac.concat(fileEntry.getName().replaceAll(
+				".class", ""));
+			@SuppressWarnings("resource")
+			Class<?> clas = new URLClassLoader(urls).loadClass(cls);
+			if (nameFilter.isEmpty()) {
+			    allClasses.add(clas);
+			} else {
+			    if (cls.equalsIgnoreCase(nameFilter)) {
+				allClasses.add(clas);
+			    }
+			}
+		    } catch (Exception e) {
+			e.printStackTrace();
+		    }
+		}
+	    }
+	}
     }
 }
