@@ -22,6 +22,7 @@ package tools.code.gen;
 import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -36,7 +37,7 @@ public class MainClass {
      */
     private static File file = null;
     /*
-     * Kepp All classes
+     * Keep All classes
      */
     private static Set<Class<?>> allClasses = new HashSet<Class<?>>();
     /*
@@ -54,50 +55,88 @@ public class MainClass {
     private static List<String> outputClassDirectory = new ArrayList<String>();
 
     public static void main(String[] args) {
-	try {
-	    // This version can only take one directory location
-	    if (args.length == 0) {
-		System.err
-			.println("You must provide the folder name with location, not the package names. "
-				+ "\nex: C:\\Temp\\src");
-		System.err
-			.println("You can also provide a specific Test class name as second parameter. \n"
-				+ "ex: C:\\Temp\\src a.b.Test (without .class extension)");
-		System.exit(-1);
-	    }
 
+	// This version can only take one directory location
+	if (args.length == 0) {
+	    System.err
+		    .println("You must provide the folder name with path, not the package name. "
+			    + "ex: C:\\Temp\\src");
+	    System.err
+		    .println("You can also provide a specific Test class name as second parameter. "
+			    + "ex: C:\\Temp\\src a.b.Test (without .class extension)");
+	    System.err
+		    .println("You can also use this jar file as a library by calling MainClass.codeGen "
+			    + "by providing maximum 2 parameters using String array.");
+	    System.exit(-1);
+	}
+	codeGen(args);
+    }
+
+    /**
+     * <li><strong><i>codeGen</i></strong></li>
+     * 
+     * <pre>
+     * public static void codeGen(String[] args)
+     * </pre>
+     * 
+     * <p>
+     * To make the code generation available while using it as a library file. A
+     * String array should pass which can take any number of parameters but it
+     * will count only first two. args[0] as folder name with path (not the
+     * package name) ex: c:\temp\ and args[1] is optional as a specific name
+     * filter. ex: a.t.Test, means codeGen will look for Test class of to
+     * generate code, other test classes will be excaped.
+     * </p>
+     * 
+     * @param args
+     *            - String[], args[0] as location, args[1] as specific Test
+     *            class.
+     * 
+     * @author Shohel Shamim
+     */
+    public static void codeGen(String[] args) {
+	try {
 	    String fileLocation = args[0].trim();
 	    // Get specific class name
-	    String nafeFilter = (args.length > 1) ? args[1].trim() : "";
+	    String nameFilter = (args.length > 1) ? args[1].trim() : "";
 	    file = new File(fileLocation);
-	    getListOfClassesFromDirectory(file, nafeFilter, "");
+
+	    System.out
+		    .println("------------------------------\n***** Loading classes... *****\n------------------------------");
+	    getListOfClassesFromDirectory(file, nameFilter, "");
+	    System.out
+		    .println("------------------------------------------------\n");
 
 	    String fileSeparator = System.getProperty("file.separator");
 
+	    System.out.println("---------------------------------------------");
+	    System.out.println("****** Verify Test Classes - JUnit 4.0 ******");
+	    System.out.println("---------------------------------------------");
 	    for (Class<?> cls : allClasses) {
+		System.out.println("\nClass " + cls.getName());
+		System.out
+			.println("-------------------------------------------");
 		// Verify JUnit Test class first, if there JUnit fails to run
 		// Test
 		// case then it will not generate the output
 		Result result = null;
 		try {
-		    System.out
-			    .println("******Run Test Case - JUnit 4.0******\n");
 		    result = JUnitCore.runClasses(cls);
-		    System.out
-			    .println("\n******Test Case Run Complete******\n\n");
 		} catch (Exception e) {
-
+		    e.printStackTrace();
 		}
 		if (result != null && !result.getFailures().isEmpty()) {
 		    nonTestClasses.add(cls);
-		    System.err.println(cls.getName()
-			    + " is not a JUnit Test class");
+		    System.out.println("\tNot a Test Class");
 		} else {
 		    testClasses.add(cls);
-		    System.out.println("Loaded JUnit Test class: "
-			    + cls.getName());
+		    System.out
+			    .println("-------------------------------------------");
+		    System.out.println(cls.getName() + " is a Test Class");
 		}
 	    }
+	    System.out
+		    .println("\n---------------------------------------------");
 
 	    // Class<?> clss = null;
 	    // BasicTest.class;
@@ -140,9 +179,10 @@ public class MainClass {
 		     * Character that separates components of a file path. This
 		     * is "/" on UNIX and "\" on Windows.
 		     */
-
-		    String directory = clss.getResource("").getPath()
-			    .substring(1); // Physical Path; removed first char
+		    // Physical Path; Decode path to avoid unwanted char,
+		    // removed first char,
+		    String directory = URLDecoder.decode(clss.getResource("")
+			    .getFile().substring(1), "UTF-8");
 		    if (fileSeparator.equalsIgnoreCase("\\")) {
 			directory = directory.replaceAll("/", fileSeparator
 				+ fileSeparator);
@@ -168,13 +208,13 @@ public class MainClass {
 		     * outputClass.execute() to write code in file; it returns
 		     * code as output
 		     */
-		    System.out.println("\n****** Generating Output Code for "
+		    System.out.println("\n****** Generating Code for "
 			    + clss.getName() + " ******");
 		    // System.out.println(outputClass.execute());
 		    outputClass.execute();
 		    outputClass = null;
-		    System.out
-			    .println("\n****** Code Generation Complete ******");
+		    System.out.println("\tCode Generation Complete as "
+			    + outputClassName + ".java");
 		    outputClassDirectory.add(directory + outputClassName
 			    + ".java");
 		}
@@ -183,7 +223,11 @@ public class MainClass {
 	    System.err.println(e.getMessage());
 	} finally {
 	    System.out
-		    .println("\n\n\n****** List of Generated code with physical path ******");
+		    .println("\n--------------------------------------------------------");
+	    System.out
+		    .println("****** List of Generated code with physical path ******");
+	    System.out
+		    .println("--------------------------------------------------------");
 	    for (String vals : outputClassDirectory) {
 		System.out.println(vals);
 	    }
@@ -226,6 +270,7 @@ public class MainClass {
 				".class", ""));
 			@SuppressWarnings("resource")
 			Class<?> clas = new URLClassLoader(urls).loadClass(cls);
+			System.out.println("\t" + clas.getName());
 			if (nameFilter.isEmpty()) {
 			    allClasses.add(clas);
 			} else {
