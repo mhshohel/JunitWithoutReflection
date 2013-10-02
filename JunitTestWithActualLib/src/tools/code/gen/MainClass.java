@@ -19,19 +19,28 @@
  */
 package tools.code.gen;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.URLDecoder;
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Result;
 
 public class MainClass {
+    /*
+     * Character that separates components of a file path. This is "/" on UNIX
+     * and "\" on Windows.
+     */
+    private static String fileSeparator = System.getProperty("file.separator");
     /*
      * Store file info
      */
@@ -43,18 +52,34 @@ public class MainClass {
     /*
      * Keep the list of all test classes
      */
-    private static List<Class<?>> testClasses = new ArrayList<Class<?>>();
+    private static Set<Class<?>> testClasses = new HashSet<Class<?>>();
     /*
      * Keep the list of all non test classes
      */
-    private static List<Class<?>> nonTestClasses = new ArrayList<Class<?>>();
+    private static Set<Class<?>> nonTestClasses = new HashSet<Class<?>>();
     /*
      * Save output class directory information, so that it can print at the end
-     * of code generation
+     * of code generation, Key: Directory, Value: Java file name
      */
-    private static List<String> outputClassDirectory = new ArrayList<String>();
+    private static HashMap<String, String> outputClassDirectory = new HashMap<String, String>();
+    /*
+     * Keep all source files list, Key: location with file name, Value: File
+     * Name
+     */
+    private static HashMap<String, String> sourceFiles = new HashMap<String, String>();
 
     public static void main(String[] args) {
+	// Map<String, String> codes = new HashMap<String, String>();
+	//
+	// codes.put("A1", "Aania");
+	// codes.put("X1", "Abatha");
+	// codes.put("C1", "Acathan");
+	// codes.put("S1", "Adreenas");
+	// codes.put("A1", "Aania");
+	//
+	// for (Map.Entry entry : codes.entrySet()) {
+	// System.out.println(entry.getKey() + ", " + entry.getValue());
+	// }
 
 	// This version can only take one directory location
 	if (args.length == 0) {
@@ -69,56 +94,63 @@ public class MainClass {
 			    + "by providing maximum 2 parameters using String array.");
 	    System.exit(-1);
 	}
-	codeGen(args);
+	codeGen(args, true);
+	readNoneTestClasses();
+	// readTestClasses();
+	// readGeneratedTestCode();
     }
 
     /**
      * <li><strong><i>codeGen</i></strong></li>
      * 
      * <pre>
-     * public static void codeGen(String[] args)
+     * public static void codeGen(String[] args, boolean isMethodSorted)
      * </pre>
      * 
      * <p>
      * To make the code generation available while using it as a library file. A
      * String array should pass which can take any number of parameters but it
      * will count only first two. args[0] as folder name with path (not the
-     * package name) ex: c:\temp\ and args[1] is optional as a specific name
+     * package name) ex: c:\temp and args[1] is optional as a specific name
      * filter. ex: a.t.Test, means codeGen will look for Test class of to
-     * generate code, other test classes will be excaped.
+     * generate code, other test classes will be escaped.
      * </p>
      * 
      * @param args
      *            - String[], args[0] as location, args[1] as specific Test
      *            class.
+     * @param isMethodSorted
+     *            - boolean if test class should provide sorted method then
+     *            true.
      * 
      * @author Shohel Shamim
      */
-    public static void codeGen(String[] args) {
+    public static void codeGen(String[] args, boolean isMethodSorted) {
 	try {
 	    String fileLocation = args[0].trim();
 	    // Get specific class name
 	    String nameFilter = (args.length > 1) ? args[1].trim() : "";
 	    file = new File(fileLocation);
 
-	    System.out
-		    .println("------------------------------\n***** Loading classes... *****\n------------------------------");
+	    System.out.println("------------------------------\n"
+		    + "***** Loading classes... *****\n"
+		    + "------------------------------");
 	    getListOfClassesFromDirectory(file, nameFilter, "");
 	    System.out
 		    .println("------------------------------------------------\n");
 
-	    String fileSeparator = System.getProperty("file.separator");
-
 	    System.out.println("---------------------------------------------");
 	    System.out.println("****** Verify Test Classes - JUnit 4.0 ******");
 	    System.out.println("---------------------------------------------");
-	    for (Class<?> cls : allClasses) {
+
+	    Set<Class<?>> classes = (testClasses.isEmpty()) ? allClasses
+		    : testClasses;
+	    for (Class<?> cls : classes) {
 		System.out.println("\nClass " + cls.getName());
 		System.out
 			.println("-------------------------------------------");
-		// Verify JUnit Test class first, if there JUnit fails to run
-		// Test
-		// case then it will not generate the output
+		// Verify JUnit Test class first, if there JUnit fails to
+		// run Test case then it will not generate the output
 		Result result = null;
 		try {
 		    result = JUnitCore.runClasses(cls);
@@ -127,7 +159,7 @@ public class MainClass {
 		}
 		if (result != null && !result.getFailures().isEmpty()) {
 		    nonTestClasses.add(cls);
-		    System.out.println("\tNot a Test Class");
+		    System.out.println("\tis not a Test Class");
 		} else {
 		    testClasses.add(cls);
 		    System.out
@@ -173,20 +205,16 @@ public class MainClass {
 		    String outputClassName = clss.getSimpleName().concat(
 			    "Output");
 		    String packageName = clss.getPackage().getName();
-		    // MainClass.class.getPackage().getName()+ ".output";
 
-		    /*
-		     * Character that separates components of a file path. This
-		     * is "/" on UNIX and "\" on Windows.
-		     */
-		    // Physical Path; Decode path to avoid unwanted char,
+		    // Physical Path; Decode path to avoid unwanted chars,
 		    // removed first char,
 		    String directory = URLDecoder.decode(clss.getResource("")
 			    .getFile().substring(1), "UTF-8");
-		    if (fileSeparator.equalsIgnoreCase("\\")) {
-			directory = directory.replaceAll("/", fileSeparator
-				+ fileSeparator);
-		    }
+		    directory = fileLocation
+			    .concat(fileSeparator)
+			    .concat(packageName.replace('.', (fileSeparator
+				    .equalsIgnoreCase("/") ? '/' : '\\')))
+			    .concat(fileSeparator);
 
 		    /*
 		     * If isMethodSorted is true then method will be sorted
@@ -199,7 +227,7 @@ public class MainClass {
 		     * method not match, until you run 2-3 time you will get
 		     * sorted.
 		     */
-		    boolean methodShouldSort = true; // or false
+		    boolean methodShouldSort = isMethodSorted; // or false
 		    // Output generation begins;
 		    GenerateOutput outputClass = new GenerateOutput(clss,
 			    packageName, outputClassName, methodShouldSort,
@@ -215,8 +243,10 @@ public class MainClass {
 		    outputClass = null;
 		    System.out.println("\tCode Generation Complete as "
 			    + outputClassName + ".java");
-		    outputClassDirectory.add(directory + outputClassName
-			    + ".java");
+		    // Key is path with .java file and value is class name
+		    outputClassDirectory.put(
+			    (directory + outputClassName + ".java"),
+			    clss.getSimpleName());
 		}
 	    }
 	} catch (Exception e) {
@@ -228,8 +258,9 @@ public class MainClass {
 		    .println("****** List of Generated code with physical path ******");
 	    System.out
 		    .println("--------------------------------------------------------");
-	    for (String vals : outputClassDirectory) {
-		System.out.println(vals);
+
+	    for (Entry<String, String> entry : outputClassDirectory.entrySet()) {
+		System.out.println(entry.getKey());
 	    }
 	}
     }
@@ -271,18 +302,81 @@ public class MainClass {
 			@SuppressWarnings("resource")
 			Class<?> clas = new URLClassLoader(urls).loadClass(cls);
 			System.out.println("\t" + clas.getName());
-			if (nameFilter.isEmpty()) {
-			    allClasses.add(clas);
-			} else {
-			    if (cls.equalsIgnoreCase(nameFilter)) {
-				allClasses.add(clas);
-			    }
+			allClasses.add(clas);
+			if (cls.equalsIgnoreCase(nameFilter)) {
+			    testClasses.add(clas);
 			}
 		    } catch (Exception e) {
 			e.printStackTrace();
 		    }
+		} else if (fileEntry.getName().endsWith(".java")) {
+		    sourceFiles.put(fileEntry.getAbsolutePath(),
+			    fileEntry.getName());
 		}
 	    }
 	}
+    }
+
+    public static void readNoneTestClasses() {
+	System.out.println("\n\n2nd Part.....\n\n");
+	String requiredJavaFile;
+	String genCodeDiractory;
+	String searchForJavaFileToSource;
+	for (Entry<String, String> entry : outputClassDirectory.entrySet()) {
+	    requiredJavaFile = entry.getValue().concat(".java");
+	    genCodeDiractory = entry.getKey();
+	    genCodeDiractory = genCodeDiractory.substring(0,
+		    genCodeDiractory.lastIndexOf(fileSeparator) + 1);
+
+	    searchForJavaFileToSource = genCodeDiractory.trim().concat(
+		    requiredJavaFile.trim());
+	    System.out.println(requiredJavaFile);
+	    System.out.println(genCodeDiractory);
+	    System.out.println(searchForJavaFileToSource);
+	    System.out.println(sourceFiles
+		    .containsKey(searchForJavaFileToSource));
+	}
+
+	BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+
+	try {
+	    System.out.println(br.readLine());
+	} catch (IOException e) {
+
+	    e.printStackTrace();
+	}
+
+	// for (Class<?> cls : allClasses) {
+	// if (cls.getName().equalsIgnoreCase("graphs.Node")) {
+	// System.out.println("Class Name: " + cls);
+	// // Methods
+	// System.out
+	// .println("Methods:" + cls.getDeclaredMethods().length);
+	// // Inner classes; retrieve everything from there
+	// System.out.println("Inner Classes: "
+	// + cls.getDeclaredClasses().length);
+	// // Constructors
+	// System.out.println("Constructors: "
+	// + cls.getDeclaredConstructors().length);
+	// // Fields
+	// System.out.println("Fields :" + cls.getDeclaredFields().length);
+	// }
+	// // break;
+	// // System.out.println("\n\n");
+	// }
+	Class<?> cls = A.class;
+	System.out.println("Class Name: " + cls);
+	// Methods
+	System.out.println("Methods:" + cls.getDeclaredMethods().length);
+	// Inner classes
+	System.out.println("Inner Classes: " + cls.getDeclaredClasses().length);
+	// Constructors
+	System.out.println("Constructors: "
+		+ cls.getDeclaredConstructors().length);
+	// Fields
+	System.out.println("Fields :" + cls.getDeclaredFields().length);
+	Method[] ms = cls.getDeclaredMethods();
+	Method m = ms[0];
+	System.out.println(m);
     }
 }
