@@ -256,109 +256,6 @@ public class ClassRecords implements AnnotaionList {
     }
 
     /**
-     * <li><strong><i>readAnnotations</i></strong></li>
-     * 
-     * <pre>
-     * private void readAnnotations(Class<?> cls)
-     * </pre>
-     * 
-     * <p>
-     * Retrieve annotations of classes and keep them in the right property.
-     * Depending on Annotation different property was set. This method is very
-     * important to generate code.
-     * </p>
-     * 
-     * @param cls
-     *            - a class name with .class extension or Class Type
-     * 
-     * @author Shohel Shamim
-     */
-    private void readAnnotations(Class<?> cls) {
-	Class<?>[] suits = null;
-	Class<?> inCategory = null;
-	Class<?> exCategory = null;
-	// reset value of essential properties of class
-	resetValues();
-	// Setting properties and collecting list of @Suite classes
-	for (Annotation annotation : cls.getAnnotations()) {
-	    String name = annotation.annotationType().getSimpleName();
-	    this.annotations.put(annotation, name);
-	    if (name.equalsIgnoreCase(Ignore)) {
-		this.isIgnored = true;
-	    } else if (name.equalsIgnoreCase(RunWith)) {
-		RunWith runWith = (RunWith) annotation;
-		if (runWith.value().getSimpleName().equalsIgnoreCase(Suite)) {
-		    this.hasRunWithSuite = true;
-		} else if (runWith.value().getSimpleName()
-			.equalsIgnoreCase(Categories)) {
-		    this.hasRunWithCategories = true;
-		} else if (runWith.value().getSimpleName()
-			.equalsIgnoreCase(Theories)) {
-		    this.hasRunWithTheories = true;
-		} else if (runWith.value().getSimpleName()
-			.equalsIgnoreCase(Parameterized)) {
-		    this.hasRunWithParameterized = true;
-		}
-	    } else if (name.equalsIgnoreCase(IncludeCategory)) {
-		inCategory = ((IncludeCategory) annotation).value();
-	    } else if (name.equalsIgnoreCase(ExcludeCategory)) {
-		exCategory = ((ExcludeCategory) annotation).value();
-	    } else if (name.equalsIgnoreCase(SuiteClasses)) {
-		// Adding classes those are in @Suite.SuiteClasses{};
-		// class will be store as a object of ClassRecords later
-		suits = ((SuiteClasses) annotation).value();
-		this.hasSuiteClasses = true;
-	    }
-	}
-	if (hasRunWithCategories()) {
-	    this.hasRunWithCategoriesAtItsPath = true;
-	} else {
-	    if (this.parentClassRecord != null
-		    && this.parentClassRecord.hasRunWithCategoriesAtItsPath()) {
-		this.hasRunWithCategoriesAtItsPath = true;
-	    }
-	}
-	// If parent class is ignored then other essential properties won't
-	// work; so must need to reset them
-	if (this.isIgnored) {
-	    resetValues();
-	} else if (this.hasRunWithParameterized) {
-	    Constructor<?>[] constructors = cls.getDeclaredConstructors();
-	    // Parameterized class have only one constructor, not more or less,
-	    // so, it can call first element from the array
-	    Constructor<?> constructor = constructors[0];
-	    this.constructorsParametsType = new Object[constructor
-		    .getParameterTypes().length];
-	    this.constructorsParametsTypeClass = new Class<?>[constructor
-		    .getParameterTypes().length];
-	    for (int i = 0; i < constructor.getParameterTypes().length; i++) {
-		this.constructorsParametsType[i] = constructor
-			.getParameterTypes()[i].getSimpleName();
-		this.constructorsParametsTypeClass[i] = constructor
-			.getParameterTypes()[i];
-	    }
-	} else {
-	    // if (hasRunWithSuite && hasSuiteClasses) {
-	    if (hasSuiteClasses()) {
-		if (this.hasRunWithCategories) {
-		    if (inCategory != null) {
-			addIncludeCategoryClass(inCategory);
-		    }
-		    if (exCategory != null) {
-			addExcludeCategoryClass(exCategory);
-		    }
-		}
-		for (Class<?> clz : suits) {
-		    // Lookup all @Suite classes and add new object of
-		    // ClassRecords, so that each class can contains their own
-		    // properties
-		    this.suiteClasses.add(new ClassRecords(clz, this));
-		}
-	    }
-	}
-    }
-
-    /**
      * <li><strong><i>getConstructorsParametsType</i></strong></li>
      * 
      * <pre>
@@ -681,6 +578,109 @@ public class ClassRecords implements AnnotaionList {
      */
     public boolean isIgnored() {
 	return this.isIgnored;
+    }
+
+    /**
+     * <li><strong><i>readAnnotations</i></strong></li>
+     * 
+     * <pre>
+     * private void readAnnotations(Class<?> cls)
+     * </pre>
+     * 
+     * <p>
+     * Retrieve annotations of classes and keep them in the right property.
+     * Depending on Annotation different property was set. This method is very
+     * important to generate code.
+     * </p>
+     * 
+     * @param cls
+     *            - a class name with .class extension or Class Type
+     * 
+     * @author Shohel Shamim
+     */
+    private void readAnnotations(Class<?> cls) {
+	Class<?>[] suits = null;
+	Class<?> inCategory = null;
+	Class<?> exCategory = null;
+	// reset value of essential properties of class
+	resetValues();
+	// Setting properties and collecting list of @Suite classes
+	for (Annotation annotation : cls.getAnnotations()) {
+	    String name = annotation.annotationType().getSimpleName();
+	    this.annotations.put(annotation, name);
+	    if (name.equalsIgnoreCase(Ignore)) {
+		this.isIgnored = true;
+	    } else if (name.equalsIgnoreCase(RunWith)) {
+		RunWith runWith = (RunWith) annotation;
+		if (runWith.value().getSimpleName().equalsIgnoreCase(Suite)) {
+		    this.hasRunWithSuite = true;
+		} else if (runWith.value().getSimpleName()
+			.equalsIgnoreCase(Categories)) {
+		    this.hasRunWithCategories = true;
+		} else if (runWith.value().getSimpleName()
+			.equalsIgnoreCase(Theories)) {
+		    this.hasRunWithTheories = true;
+		} else if (runWith.value().getSimpleName()
+			.equalsIgnoreCase(Parameterized)) {
+		    this.hasRunWithParameterized = true;
+		}
+	    } else if (name.equalsIgnoreCase(IncludeCategory)) {
+		inCategory = ((IncludeCategory) annotation).value();
+	    } else if (name.equalsIgnoreCase(ExcludeCategory)) {
+		exCategory = ((ExcludeCategory) annotation).value();
+	    } else if (name.equalsIgnoreCase(SuiteClasses)) {
+		// Adding classes those are in @Suite.SuiteClasses{};
+		// class will be store as a object of ClassRecords later
+		suits = ((SuiteClasses) annotation).value();
+		this.hasSuiteClasses = true;
+	    }
+	}
+	if (hasRunWithCategories()) {
+	    this.hasRunWithCategoriesAtItsPath = true;
+	} else {
+	    if (this.parentClassRecord != null
+		    && this.parentClassRecord.hasRunWithCategoriesAtItsPath()) {
+		this.hasRunWithCategoriesAtItsPath = true;
+	    }
+	}
+	// If parent class is ignored then other essential properties won't
+	// work; so must need to reset them
+	if (this.isIgnored) {
+	    resetValues();
+	} else if (this.hasRunWithParameterized) {
+	    Constructor<?>[] constructors = cls.getDeclaredConstructors();
+	    // Parameterized class have only one constructor, not more or less,
+	    // so, it can call first element from the array
+	    Constructor<?> constructor = constructors[0];
+	    this.constructorsParametsType = new Object[constructor
+		    .getParameterTypes().length];
+	    this.constructorsParametsTypeClass = new Class<?>[constructor
+		    .getParameterTypes().length];
+	    for (int i = 0; i < constructor.getParameterTypes().length; i++) {
+		this.constructorsParametsType[i] = constructor
+			.getParameterTypes()[i].getSimpleName();
+		this.constructorsParametsTypeClass[i] = constructor
+			.getParameterTypes()[i];
+	    }
+	} else {
+	    // if (hasRunWithSuite && hasSuiteClasses) {
+	    if (hasSuiteClasses()) {
+		if (this.hasRunWithCategories) {
+		    if (inCategory != null) {
+			addIncludeCategoryClass(inCategory);
+		    }
+		    if (exCategory != null) {
+			addExcludeCategoryClass(exCategory);
+		    }
+		}
+		for (Class<?> clz : suits) {
+		    // Lookup all @Suite classes and add new object of
+		    // ClassRecords, so that each class can contains their own
+		    // properties
+		    this.suiteClasses.add(new ClassRecords(clz, this));
+		}
+	    }
+	}
     }
 
     /**

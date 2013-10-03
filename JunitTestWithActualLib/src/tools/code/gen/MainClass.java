@@ -23,12 +23,13 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.URLDecoder;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -71,6 +72,8 @@ public class MainClass {
      * Keep source files list, Key: location with file name, Value: File Name
      */
     private static HashMap<String, String> sourceFiles = new HashMap<String, String>();
+
+    private static List<Description> classDescriptions = new ArrayList<Description>();
 
     public static void main(String[] args) {
 	// Map<String, String> codes = new HashMap<String, String>();
@@ -163,14 +166,18 @@ public class MainClass {
 		}
 		if (result != null && !result.getFailures().isEmpty()) {
 		    nonTestClasses.add(cls);
+		    classDescriptions.add(new Description(cls, false));
 		    System.out.println("\tis not a Test Class");
 		} else {
 		    testClasses.add(cls);
+		    classDescriptions.add(new Description(cls, true));
 		    System.out
 			    .println("-------------------------------------------");
 		    System.out.println(cls.getName() + " is a Test Class");
 		}
+
 	    }
+
 	    System.out
 		    .println("\n---------------------------------------------");
 
@@ -201,6 +208,17 @@ public class MainClass {
 	    if (testClasses.isEmpty()) {
 		System.out.println("No Test classes found to Generate code.");
 	    } else {
+		// If looking for only one test class then other class record
+		// needs to describe, if specified a JUnit test class then it
+		// will mark other test class as normal class
+		if (nonTestClasses.isEmpty()) {
+		    for (Class<?> cls : allClasses) {
+			if (!testClasses.contains(cls)) {
+			    nonTestClasses.add(cls);
+			    classDescriptions.add(new Description(cls, false));
+			}
+		    }
+		}
 		for (Class<?> clss : testClasses) {
 		    /*
 		     * Changed to class original name instead of hard coded
@@ -388,19 +406,20 @@ public class MainClass {
 	    }
 	}
 
-	Class<?> cls = A.class;
-	System.out.println("Class Name: " + cls);
-	// Methods
-	System.out.println("Methods:" + cls.getDeclaredMethods().length);
-	// Inner classes
-	System.out.println("Inner Classes: " + cls.getDeclaredClasses().length);
-	// Constructors
-	System.out.println("Constructors: "
-		+ cls.getDeclaredConstructors().length);
-	// Fields
-	System.out.println("Fields :" + cls.getDeclaredFields().length);
-	Method[] ms = cls.getDeclaredMethods();
-	Method m = ms[0];
-	System.out.println(m);
+	// Class<?> cls = A.class;
+	// System.out.println("Class Name: " + cls);
+	// // Methods
+	// System.out.println("Methods:" + cls.getDeclaredMethods().length);
+	// // Inner classes
+	// System.out.println("Inner Classes: " +
+	// cls.getDeclaredClasses().length);
+	// // Constructors
+	// System.out.println("Constructors: "
+	// + cls.getDeclaredConstructors().length);
+	// // Fields
+	// System.out.println("Fields :" + cls.getDeclaredFields().length);
+	// Method[] ms = cls.getDeclaredMethods();
+	// Method m = ms[0];
+	// System.out.println(m);
     }
 }
