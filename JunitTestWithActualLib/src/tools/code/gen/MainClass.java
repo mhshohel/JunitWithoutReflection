@@ -63,8 +63,12 @@ public class MainClass {
      */
     private static HashMap<String, String> outputClassDirectory = new HashMap<String, String>();
     /*
-     * Keep all source files list, Key: location with file name, Value: File
-     * Name
+     * Keep all generated source files list and its name of its original test
+     * clase source file name, Key: location with file name, Value: File Name
+     */
+    private static HashMap<String, String> genCodeAndTestClassSourceFiles = new HashMap<String, String>();
+    /*
+     * Keep source files list, Key: location with file name, Value: File Name
      */
     private static HashMap<String, String> sourceFiles = new HashMap<String, String>();
 
@@ -95,7 +99,7 @@ public class MainClass {
 	    System.exit(-1);
 	}
 	codeGen(args, true);
-	readNoneTestClasses();
+	verifySourcodeForGenCode();
 	// readTestClasses();
 	// readGeneratedTestCode();
     }
@@ -135,7 +139,7 @@ public class MainClass {
 	    System.out.println("------------------------------\n"
 		    + "***** Loading classes... *****\n"
 		    + "------------------------------");
-	    getListOfClassesFromDirectory(file, nameFilter, "");
+	    readFiles(file, nameFilter, "");
 	    System.out
 		    .println("------------------------------------------------\n");
 
@@ -266,10 +270,10 @@ public class MainClass {
     }
 
     /**
-     * <li><strong><i>getListOfClassesFromDirectory</i></strong></li>
+     * <li><strong><i>readFiles</i></strong></li>
      * 
      * <pre>
-     * private static void getListOfClassesFromDirectory(final File folder, final String pack)
+     * private static void readFiles(final File folder, final String pack)
      * </pre>
      * 
      * <p>
@@ -285,85 +289,105 @@ public class MainClass {
      * 
      * @author Shohel Shamim
      */
-    private static void getListOfClassesFromDirectory(final File folder,
-	    final String nameFilter, final String pack) {
-	String pac = (pack.trim().equalsIgnoreCase("") ? "" : pack.concat("."));
-	for (final File fileEntry : folder.listFiles()) {
-	    if (fileEntry.isDirectory()) {
-		getListOfClassesFromDirectory(fileEntry, nameFilter,
-			pac.concat(fileEntry.getName()));
-	    } else {
-		if (fileEntry.getName().endsWith(".class")) {
-		    try {
-			URL url = file.toURI().toURL();
-			URL[] urls = new URL[] { url };
-			String cls = pac.concat(fileEntry.getName().replaceAll(
-				".class", ""));
-			@SuppressWarnings("resource")
-			Class<?> clas = new URLClassLoader(urls).loadClass(cls);
-			System.out.println("\t" + clas.getName());
-			allClasses.add(clas);
-			if (cls.equalsIgnoreCase(nameFilter)) {
-			    testClasses.add(clas);
+    private static void readFiles(final File folder, final String nameFilter,
+	    final String pack) {
+	try {
+	    String pac = (pack.trim().equalsIgnoreCase("") ? "" : pack
+		    .concat("."));
+	    for (final File fileEntry : folder.listFiles()) {
+		if (fileEntry.isDirectory()) {
+		    readFiles(fileEntry, nameFilter,
+			    pac.concat(fileEntry.getName()));
+		} else {
+		    if (fileEntry.getName().endsWith(".class")) {
+			try {
+			    URL url = file.toURI().toURL();
+			    URL[] urls = new URL[] { url };
+			    String cls = pac.concat(fileEntry.getName()
+				    .replaceAll(".class", ""));
+			    @SuppressWarnings("resource")
+			    Class<?> clas = new URLClassLoader(urls)
+				    .loadClass(cls);
+			    System.out.println("\t" + clas.getName());
+			    allClasses.add(clas);
+			    if (cls.equalsIgnoreCase(nameFilter)) {
+				testClasses.add(clas);
+			    }
+			} catch (Exception e) {
+			    e.printStackTrace();
 			}
-		    } catch (Exception e) {
-			e.printStackTrace();
+		    } else if (fileEntry.getName().endsWith(".java")) {
+			genCodeAndTestClassSourceFiles.put(
+				fileEntry.getAbsolutePath(),
+				fileEntry.getName());
 		    }
-		} else if (fileEntry.getName().endsWith(".java")) {
-		    sourceFiles.put(fileEntry.getAbsolutePath(),
-			    fileEntry.getName());
 		}
 	    }
+	} catch (Exception e) {
+	    e.printStackTrace();
 	}
     }
 
-    public static void readNoneTestClasses() {
-	System.out.println("\n\n2nd Part.....\n\n");
-	String requiredJavaFile;
-	String genCodeDiractory;
-	String searchForJavaFileToSource;
+    /*
+     * Sample code for 2nd part of the Thesis
+     */
+    public static void verifySourcodeForGenCode() {
+	BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+	System.out
+		.println("\nWarning: Source code that you provide should be same as class file."
+			+ "Any changes in source code without re-compiling it may cause invalid results."
+			+ "\n2nd Part.....\n\n");
+	String requiredJavaFile = null;
+	String genCodeDiractory = null;
+	String searchForJavaSourceFileWithPath = null;
+	// first collect verify or collect all source code for Test classes
 	for (Entry<String, String> entry : outputClassDirectory.entrySet()) {
+	    boolean fileFound = false;
 	    requiredJavaFile = entry.getValue().concat(".java");
 	    genCodeDiractory = entry.getKey();
 	    genCodeDiractory = genCodeDiractory.substring(0,
 		    genCodeDiractory.lastIndexOf(fileSeparator) + 1);
 
-	    searchForJavaFileToSource = genCodeDiractory.trim().concat(
+	    searchForJavaSourceFileWithPath = genCodeDiractory.trim().concat(
 		    requiredJavaFile.trim());
-	    System.out.println(requiredJavaFile);
-	    System.out.println(genCodeDiractory);
-	    System.out.println(searchForJavaFileToSource);
-	    System.out.println(sourceFiles
-		    .containsKey(searchForJavaFileToSource));
+	    if (genCodeAndTestClassSourceFiles
+		    .containsKey(searchForJavaSourceFileWithPath)) {
+		// if source code found in the same directory with same name
+	    } else {
+		while (!fileFound) {
+		    // Source code file must be named as requiredJavaFile
+		    System.out.println("Please provide source code file "
+			    + "location (ex: c:\\Temp) of : \n"
+			    + requiredJavaFile);
+
+		    File folder = null;
+		    try {
+			genCodeDiractory = br.readLine();
+			System.out.println(genCodeDiractory);
+			folder = new File(genCodeDiractory);
+		    } catch (IOException e) {
+			e.printStackTrace();
+		    }
+
+		    try {
+			for (final File fileEntry : folder.listFiles()) {
+			    if (fileEntry.getName().endsWith(".java")) {
+				if (fileEntry.getName().equalsIgnoreCase(
+					requiredJavaFile)) {
+				    fileFound = true;
+				    break;
+				}
+			    }
+			}
+		    } catch (Exception e) {
+			System.err
+				.println("Error!: Please provide a valid PATH.");
+		    }
+		}
+		sourceFiles.put(genCodeDiractory, requiredJavaFile);
+	    }
 	}
 
-	BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-
-	try {
-	    System.out.println(br.readLine());
-	} catch (IOException e) {
-
-	    e.printStackTrace();
-	}
-
-	// for (Class<?> cls : allClasses) {
-	// if (cls.getName().equalsIgnoreCase("graphs.Node")) {
-	// System.out.println("Class Name: " + cls);
-	// // Methods
-	// System.out
-	// .println("Methods:" + cls.getDeclaredMethods().length);
-	// // Inner classes; retrieve everything from there
-	// System.out.println("Inner Classes: "
-	// + cls.getDeclaredClasses().length);
-	// // Constructors
-	// System.out.println("Constructors: "
-	// + cls.getDeclaredConstructors().length);
-	// // Fields
-	// System.out.println("Fields :" + cls.getDeclaredFields().length);
-	// }
-	// // break;
-	// // System.out.println("\n\n");
-	// }
 	Class<?> cls = A.class;
 	System.out.println("Class Name: " + cls);
 	// Methods
