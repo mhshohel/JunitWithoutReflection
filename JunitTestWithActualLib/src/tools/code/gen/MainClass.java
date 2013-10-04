@@ -26,10 +26,8 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.URLDecoder;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -65,7 +63,7 @@ public class MainClass {
     private static HashMap<String, String> outputClassDirectory = new HashMap<String, String>();
     /*
      * Keep all generated source files list and its name of its original test
-     * clase source file name, Key: location with file name, Value: File Name
+     * class source file name, Key: location with file name, Value: File Name
      */
     private static HashMap<String, String> genCodeAndTestClassSourceFiles = new HashMap<String, String>();
     /*
@@ -73,20 +71,17 @@ public class MainClass {
      */
     private static HashMap<String, String> sourceFiles = new HashMap<String, String>();
 
-    private static List<Description> classDescriptions = new ArrayList<Description>();
+    /*
+     * Keep all the description of a Class file or Java file to create a report
+     * of the process
+     */
+    // public static List<Description> classDescriptions = new
+    // ArrayList<Description>();
 
     public static void main(String[] args) {
-	// Map<String, String> codes = new HashMap<String, String>();
-	//
-	// codes.put("A1", "Aania");
-	// codes.put("X1", "Abatha");
-	// codes.put("C1", "Acathan");
-	// codes.put("S1", "Adreenas");
-	// codes.put("A1", "Aania");
-	//
-	// for (Map.Entry entry : codes.entrySet()) {
-	// System.out.println(entry.getKey() + ", " + entry.getValue());
-	// }
+
+	// Description d = new Description(graphs.Node.class,
+	// ClassCategory.REGULAR);
 
 	// This version can only take one directory location
 	if (args.length == 0) {
@@ -102,7 +97,7 @@ public class MainClass {
 	    System.exit(-1);
 	}
 	codeGen(args, true);
-	verifySourcodeForGenCode();
+	// verifySourcodeForGenCode();
 	// readTestClasses();
 	// readGeneratedTestCode();
     }
@@ -166,11 +161,13 @@ public class MainClass {
 		}
 		if (result != null && !result.getFailures().isEmpty()) {
 		    nonTestClasses.add(cls);
-		    classDescriptions.add(new Description(cls, false));
+		    // classDescriptions.add(new Description(cls,
+		    // ClassCategory.REGULAR));
 		    System.out.println("\tis not a Test Class");
 		} else {
 		    testClasses.add(cls);
-		    classDescriptions.add(new Description(cls, true));
+		    // classDescriptions.add(new Description(cls,
+		    // ClassCategory.TEST));
 		    System.out
 			    .println("-------------------------------------------");
 		    System.out.println(cls.getName() + " is a Test Class");
@@ -215,7 +212,8 @@ public class MainClass {
 		    for (Class<?> cls : allClasses) {
 			if (!testClasses.contains(cls)) {
 			    nonTestClasses.add(cls);
-			    classDescriptions.add(new Description(cls, false));
+			    // classDescriptions.add(new Description(cls,
+			    // ClassCategory.REGULAR));
 			}
 		    }
 		}
@@ -269,6 +267,8 @@ public class MainClass {
 		    outputClassDirectory.put(
 			    (directory + outputClassName + ".java"),
 			    clss.getSimpleName());
+		    // Description genCodeDesc = new Description(clss, false);
+		    // classDescriptions.add(genCodeDesc);
 		}
 	    }
 	} catch (Exception e) {
