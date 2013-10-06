@@ -181,4 +181,35 @@ public abstract class Node<E> {
      * successor, and predecessor, nodes to <tt>this</tt> node.
      */
     protected abstract void disconnect();
+
+    public class ABX {
+	public void a() {
+	    B b = new B();
+	    b.b();
+	}
+
+	class B {
+	    private String a;
+	    public String z;
+	    public static final String this$1 = "";
+
+	    public void b() {
+
+	    }
+
+	    public void c(int i, int s) {
+
+	    }
+
+	    public void b(int c) {
+
+	    }
+	}
+
+	class C {
+	    public void c() {
+
+	    }
+	}
+    }
 }

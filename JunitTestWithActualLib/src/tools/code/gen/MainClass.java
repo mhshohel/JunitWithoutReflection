@@ -21,18 +21,24 @@ package tools.code.gen;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.URLDecoder;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Result;
+
+import tools.code.gen.Description.ClassCategory;
 
 public class MainClass {
     /*
@@ -70,17 +76,14 @@ public class MainClass {
      * Keep source files list, Key: location with file name, Value: File Name
      */
     private static HashMap<String, String> sourceFiles = new HashMap<String, String>();
-
     /*
      * Keep all the description of a Class file or Java file to create a report
      * of the process
      */
-    // public static List<Description> classDescriptions = new
-    // ArrayList<Description>();
+    public static List<Description> classDescriptions = new ArrayList<Description>();
 
     public static void main(String[] args) {
-
-	// Description d = new Description(graphs.Node.class,
+	// Description d = new Description(graphs.DirectedGraph.class,
 	// ClassCategory.REGULAR);
 
 	// This version can only take one directory location
@@ -97,9 +100,23 @@ public class MainClass {
 	    System.exit(-1);
 	}
 	codeGen(args, true);
+	Description d = new Description(graphs.test.TestAlgorithms.class,
+		ClassCategory.REGULAR);
+	System.out.println(d);
+	// print(d);
 	// verifySourcodeForGenCode();
 	// readTestClasses();
 	// readGeneratedTestCode();
+    }
+
+    public static void print(Description d) {
+	try {
+	    PrintWriter output = new PrintWriter("c:\\temp\\EX.csv");
+	    output.print(d);
+	    output.close();
+	} catch (FileNotFoundException e) {
+	    e.printStackTrace();
+	}
     }
 
     /**
@@ -161,13 +178,13 @@ public class MainClass {
 		}
 		if (result != null && !result.getFailures().isEmpty()) {
 		    nonTestClasses.add(cls);
-		    // classDescriptions.add(new Description(cls,
-		    // ClassCategory.REGULAR));
+		    classDescriptions.add(new Description(cls,
+			    ClassCategory.REGULAR));
 		    System.out.println("\tis not a Test Class");
 		} else {
 		    testClasses.add(cls);
-		    // classDescriptions.add(new Description(cls,
-		    // ClassCategory.TEST));
+		    classDescriptions.add(new Description(cls,
+			    ClassCategory.TEST));
 		    System.out
 			    .println("-------------------------------------------");
 		    System.out.println(cls.getName() + " is a Test Class");
@@ -212,8 +229,8 @@ public class MainClass {
 		    for (Class<?> cls : allClasses) {
 			if (!testClasses.contains(cls)) {
 			    nonTestClasses.add(cls);
-			    // classDescriptions.add(new Description(cls,
-			    // ClassCategory.REGULAR));
+			    classDescriptions.add(new Description(cls,
+				    ClassCategory.REGULAR));
 			}
 		    }
 		}
