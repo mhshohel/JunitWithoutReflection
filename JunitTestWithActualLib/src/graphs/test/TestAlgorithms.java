@@ -3,6 +3,16 @@ package graphs.test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import eclips.MyConnectedComponents;
+import eclips.MyDFS;
+import eclips.MyGraph;
+import eclips.MyTransitiveClosure;
+import graphs.BFS;
+import graphs.ConnectedComponents;
+import graphs.DFS;
+import graphs.DirectedGraph;
+import graphs.Node;
+import graphs.TransitiveClosure;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -14,31 +24,30 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import eclips.MyConnectedComponents;
-import eclips.MyDFS;
-import eclips.MyGraph;
-import eclips.MyTransitiveClosure;
-import graphs.ConnectedComponents;
-import graphs.DFS;
-import graphs.DirectedGraph;
-import graphs.Node;
-import graphs.TransitiveClosure;
-
 public class TestAlgorithms {
+    BFS b = null;
+    graphs.test.BFS bb = null;
 
     private static final GraphGenerator generator = new GraphGenerator(
 	    new MyGraph());
 
-    // static {
-    // try {
-    // generator = new GraphGenerator(new MyGraph());
-    // //new GraphGenerator( (DirectedGraph)Class.forName(AllTests.testPackage +
-    // ".MyGraph").newInstance());
-    // } catch (Exception e) {
-    // System.out.println("An exception occured. Most likely, the package in AllTests.java is not properly set!");
-    // throw new RuntimeException(e);
-    // }
-    // }
+    String tccCC = "J";
+
+    TransitiveClosure<Integer> tcCC = new MyTransitiveClosure();
+
+    DirectedGraph<Integer> dig = generator.getTwoParts();
+
+    DirectedGraph<Integer> digg = new GraphGenerator(new MyGraph())
+	    .getTwoParts();
+
+    String met = TestAlgorithms.test(5);
+
+    String te = test(10);
+
+    public static String test(int a) {
+	DirectedGraph<Integer> dig = generator.getTwoParts();
+	return "Hi";
+    }
 
     @Before
     public void setUp() throws Exception {
@@ -47,6 +56,22 @@ public class TestAlgorithms {
 
     @After
     public void tearDown() throws Exception {
+
+    }
+
+    public void testMethodOne() {
+
+    }
+
+    public void testMethodOne(int a) {
+
+    }
+
+    public void testMethodOne(String a) {
+
+    }
+
+    public void testMethodOne(int a, String b) {
 
     }
 

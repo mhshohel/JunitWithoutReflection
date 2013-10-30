@@ -38,7 +38,8 @@ import java.util.Set;
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Result;
 
-import tools.code.gen.Description.ClassCategory;
+import tools.staticcallgraph.Description;
+import tools.staticcallgraph.Description.ClassCategory;
 
 public class MainClass {
     /*
@@ -80,7 +81,7 @@ public class MainClass {
      * Keep all the description of a Class file or Java file to create a report
      * of the process
      */
-    public static List<Description> classDescriptions = new ArrayList<Description>();
+    private static List<Description> classDescriptions = new ArrayList<Description>();
 
     public static void main(String[] args) {
 	// Description d = new Description(graphs.DirectedGraph.class,
@@ -100,11 +101,24 @@ public class MainClass {
 	    System.exit(-1);
 	}
 	codeGen(args, true);
-	Description d = new Description(graphs.test.TestAlgorithms.class,
-		ClassCategory.REGULAR);
-	System.out.println(d);
+
+	// Description d = new Description(graphs.test.TestAlgorithms.class,
+	// ClassCategory.REGULAR);
+	// System.out.println(d);
+	// new CallGraph(path)
 	// print(d);
-	// verifySourcodeForGenCode();
+	verifySourcodeForGenCode();
+	String path = "";
+	for (Entry<String, String> entry : sourceFiles.entrySet()) {
+	    path = entry.getKey().concat(entry.getValue());
+	    break;
+	}
+
+	// DirectedGraphInterface dg = new
+	// CallGraph("C:\\temp\\a\\graphs\\test")
+	// .getCallGraph();
+	// int c = dg.edgeCount();
+	// Strign path = sourceFiles.get
 	// readTestClasses();
 	// readGeneratedTestCode();
     }
@@ -176,15 +190,16 @@ public class MainClass {
 		} catch (Exception e) {
 		    e.printStackTrace();
 		}
+
 		if (result != null && !result.getFailures().isEmpty()) {
 		    nonTestClasses.add(cls);
 		    classDescriptions.add(new Description(cls,
-			    ClassCategory.REGULAR));
+			    ClassCategory.REGULAR, classDescriptions));
 		    System.out.println("\tis not a Test Class");
 		} else {
 		    testClasses.add(cls);
 		    classDescriptions.add(new Description(cls,
-			    ClassCategory.TEST));
+			    ClassCategory.TEST, classDescriptions));
 		    System.out
 			    .println("-------------------------------------------");
 		    System.out.println(cls.getName() + " is a Test Class");
@@ -225,15 +240,15 @@ public class MainClass {
 		// If looking for only one test class then other class record
 		// needs to describe, if specified a JUnit test class then it
 		// will mark other test class as normal class
-		if (nonTestClasses.isEmpty()) {
-		    for (Class<?> cls : allClasses) {
-			if (!testClasses.contains(cls)) {
-			    nonTestClasses.add(cls);
-			    classDescriptions.add(new Description(cls,
-				    ClassCategory.REGULAR));
-			}
-		    }
-		}
+		// if (nonTestClasses.isEmpty()) {
+		// for (Class<?> cls : allClasses) {
+		// if (!testClasses.contains(cls)) {
+		// nonTestClasses.add(cls);
+		// classDescriptions.add(new Description(cls,
+		// ClassCategory.REGULAR));
+		// }
+		// }
+		// }
 		for (Class<?> clss : testClasses) {
 		    /*
 		     * Changed to class original name instead of hard coded
@@ -352,9 +367,9 @@ public class MainClass {
 			    e.printStackTrace();
 			}
 		    } else if (fileEntry.getName().endsWith(".java")) {
-			genCodeAndTestClassSourceFiles.put(
-				fileEntry.getAbsolutePath(),
-				fileEntry.getName());
+			// genCodeAndTestClassSourceFiles.put(
+			// fileEntry.getAbsolutePath(),
+			// fileEntry.getName());
 		    }
 		}
 	    }
@@ -388,6 +403,7 @@ public class MainClass {
 	    if (genCodeAndTestClassSourceFiles
 		    .containsKey(searchForJavaSourceFileWithPath)) {
 		// if source code found in the same directory with same name
+		sourceFiles.put(genCodeDiractory, requiredJavaFile);
 	    } else {
 		while (!fileFound) {
 		    // Source code file must be named as requiredJavaFile
