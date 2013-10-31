@@ -252,9 +252,9 @@ public class GenerateOutput {
     private void createNewClasss(String codes, String className,
 	    String additionalClass, boolean defaultMethod) {
 	try {
-	    String fileName = (this.fileLocation + className + ".java").trim();
+	    String fileName = (this.fileLocation + className).trim();
 	    this.genJavaFileListWithLocation.add(fileName);
-	    PrintWriter output = new PrintWriter(fileName);
+	    PrintWriter output = new PrintWriter(fileName.concat(".java"));
 
 	    String stab = "    ";
 	    headerCodes(output, className);
@@ -355,7 +355,8 @@ public class GenerateOutput {
 	try {
 	    this.isWritingComplete = false;
 	    String fileName = (this.fileLocation + this.outputClassFile).trim();
-	    this.genJavaFileListWithLocation.add(fileName);
+	    this.genJavaFileListWithLocation
+		    .add((this.fileLocation + this.outputClassName).trim());
 	    output = new PrintWriter(fileName);
 	    headerCodes(output, this.outputClassName);
 	    output.print(this.formatPackageName);

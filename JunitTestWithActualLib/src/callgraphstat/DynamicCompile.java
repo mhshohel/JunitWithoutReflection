@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import javax.tools.JavaCompiler;
+import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 
@@ -64,50 +65,6 @@ public class DynamicCompile {
 	    e.printStackTrace();
 	}
 
-	// File f = new File(s);
-	// URL u = null;
-	// try {
-	// u = root.toURI().toURL();
-	// } catch (MalformedURLException e1) {
-	//
-	// e1.printStackTrace();
-	// }
-	// URLClassLoader urlClassLoader = (URLClassLoader) ClassLoader
-	// .getSystemClassLoader();
-	// Class urlClass = URLClassLoader.class;
-	// Method method = null;
-	// try {
-	// method = urlClass.getDeclaredMethod("addURL",
-	// new Class[] { URL.class });
-	// } catch (NoSuchMethodException e1) {
-	//
-	// e1.printStackTrace();
-	// } catch (SecurityException e1) {
-	//
-	// e1.printStackTrace();
-	// }
-	// method.setAccessible(true);
-	// try {
-	// method.invoke(urlClassLoader, new Object[] { u });
-	// } catch (IllegalAccessException e1) {
-	//
-	// e1.printStackTrace();
-	// } catch (IllegalArgumentException e1) {
-	//
-	// e1.printStackTrace();
-	// } catch (InvocationTargetException e1) {
-	//
-	// e1.printStackTrace();
-	// }
-
-	ClassLoader cl = ClassLoader.getSystemClassLoader();
-
-	URL[] urls = ((URLClassLoader) cl).getURLs();
-
-	for (URL url : urls) {
-	    System.out.println(url.getFile());
-	}
-
 	String classpath = System.getProperty("java.class.path");
 	String testpath = "C:\\java;" + classpath;
 	List<String> optionList = new ArrayList<String>();
@@ -118,7 +75,8 @@ public class DynamicCompile {
 	File[] files = new File[2];
 	files[0] = new File("c:\\java\\test\\Test.java");
 	files[1] = new File("c:\\java\\test\\AClassFile.java");
-	Iterable fileObjects = sjfm.getJavaFileObjects(files);
+	Iterable<? extends JavaFileObject> fileObjects = sjfm
+		.getJavaFileObjects(files);
 	JavaCompiler.CompilationTask task = compiler.getTask(null, null, null,
 		optionList, null, fileObjects);
 	task.call();

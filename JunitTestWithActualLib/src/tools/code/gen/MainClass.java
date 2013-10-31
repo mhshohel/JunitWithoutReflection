@@ -24,15 +24,22 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.URLDecoder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
+
+import javax.tools.JavaCompiler;
+import javax.tools.JavaFileObject;
+import javax.tools.StandardJavaFileManager;
+import javax.tools.ToolProvider;
 
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Result;
@@ -69,8 +76,11 @@ public class MainClass {
      * of the process
      */
     private static List<Description> classDescriptions = new ArrayList<Description>();
-    /* Keep list of all generated .java file and test class */
-    private static HashMap<List<String>, Class<?>> outputClassesDirectory = new HashMap<List<String>, Class<?>>();
+    /*
+     * Keep list of all generated .java file and Object List as test class, Main
+     * file name of GenCode and package name
+     */
+    private static HashMap<List<String>, List<Object>> outputClassesDirectory = new HashMap<List<String>, List<Object>>();
     /*
      * Keep all generated source files list and its name of its original test
      * class source file name, Key: location with file name, Value: File Name
@@ -98,14 +108,43 @@ public class MainClass {
 			    + "by providing maximum 2 parameters using String array.");
 	    System.exit(-1);
 	}
-	codeGen(args, true);
+	try {
+	    System.out
+		    .println("----------------------------------------------");
+	    System.out
+		    .println("****** Part One: Loading and Generating ******");
+	    System.out
+		    .println("----------------------------------------------");
+	    /* Generating code */
+	    codeGen(args, true);
+	    System.out
+		    .println("----------------------------------------------------------------------");
+	    System.out
+		    .println("****** Part Two: Compiling Generated Java File and Load Classes ******");
+	    System.out
+		    .println("----------------------------------------------------------------------");
+	    for (Entry<List<String>, List<Object>> entry : outputClassesDirectory
+		    .entrySet()) {
+		System.out.println("Compiling Gen Code File for:  "
+			+ ((Class<?>) entry.getValue().get(0)).getName());
+		System.out.println("Main Class Name:  "
+			+ entry.getValue().get(1));
+		/* Compiling and loading */
+		compileGeneratedCodeAndLoad(args[0], entry.getKey(), entry
+			.getValue().get(2).toString());
+		System.out
+			.println("----------------------------------------------------------------------\n");
+	    }
+	} catch (Exception e) {
+	    e.printStackTrace();
+	}
 
 	// Description d = new Description(graphs.test.TestAlgorithms.class,
 	// ClassCategory.REGULAR);
 	// System.out.println(d);
 	// new CallGraph(path)
 	// print(d);
-	verifySourcodeForGenCode();
+	// verifySourcodeForGenCode();
 	// String path = "";
 	// for (Entry<String, String> entry : sourceFiles.entrySet()) {
 	// path = entry.getKey().concat(entry.getValue());
@@ -164,9 +203,8 @@ public class MainClass {
 	    String nameFilter = (args.length > 1) ? args[1].trim() : "";
 	    file = new File(fileLocation);
 
-	    System.out.println("------------------------------\n"
-		    + "***** Loading classes... *****\n"
-		    + "------------------------------");
+	    System.out.println("Loading Classes...");
+
 	    readFiles(file, nameFilter, "");
 	    System.out
 		    .println("------------------------------------------------\n");
@@ -208,8 +246,7 @@ public class MainClass {
 
 	    }
 
-	    System.out
-		    .println("\n---------------------------------------------");
+	    System.out.println("\n-------------------------------------------");
 
 	    // Class<?> clss = null;
 	    // BasicTest.class;
@@ -282,29 +319,56 @@ public class MainClass {
 		     * sorted.
 		     */
 		    boolean methodShouldSort = isMethodSorted; // or false
+
+		    System.out
+			    .println("\n------------------------------------------------------------");
+		    System.out
+			    .println("****** Generating Code for "
+				    + clss.getName()
+				    + " ******\n------------------------------------------------------------");
+		    System.out.print("Please Wait");
+
+		    long start = System.currentTimeMillis();
+		    Runnable runnable = new Progress();
+		    Thread myThread = new Thread(runnable);
+		    myThread.start();
+
 		    // Output generation begins;
 		    GenerateOutput outputClass = new GenerateOutput(clss,
 			    packageName, outputClassName, methodShouldSort,
 			    directory);
 
-		    /*
-		     * outputClass.execute() to write code in file; it returns
-		     * code as output
-		     */
-		    System.out.println("\n****** Generating Code for "
-			    + clss.getName() + " ******\n");
+		    // clss = BigOutPut.class;
+		    // GenerateOutput outputClass = new GenerateOutput(clss,
+		    // clss
+		    // .getPackage().getName(), outputClassName,
+		    // methodShouldSort, directory);
+
 		    generatedCodeFileList = outputClass.execute();
 		    if (outputClass.isWritingComplete()) {
+			String mainFileName = (outputClassName + ".java")
+				.trim();
 			System.out
-				.println("\tCode Generation Completed. Main Class File is: "
-					+ outputClassName + ".java");
+				.println("\n\tCode Generation Completed. Main Class File is: "
+					+ mainFileName);
+			List<Object> objects = new ArrayList<Object>();
+			objects.add(clss);
+			objects.add(mainFileName);
+			objects.add(clss.getPackage().getName());
 			// Key is list of .java files and value is class
-			outputClassesDirectory.put(generatedCodeFileList, clss);
+			outputClassesDirectory.put(generatedCodeFileList,
+				objects);
 			// Description genCodeDesc = new Description(clss,
 			// false);
 			// classDescriptions.add(genCodeDesc);
 		    }
 		    outputClass = null;
+
+		    myThread.interrupt();
+		    myThread = null;
+		    long end = System.currentTimeMillis();
+		    double res = (end - start) / 1000;
+		    System.out.println("\tElapsed Time: " + res + "s");
 		}
 	    }
 	} catch (Exception e) {
@@ -317,15 +381,17 @@ public class MainClass {
 	    System.out
 		    .println("--------------------------------------------------------");
 
-	    for (Entry<List<String>, Class<?>> entry : outputClassesDirectory
+	    for (Entry<List<String>, List<Object>> entry : outputClassesDirectory
 		    .entrySet()) {
-		System.out.println("Test Class: " + entry.getValue().getName()
-			+ ".class");
+		System.out.println("Test Class: "
+			+ ((Class<?>) entry.getValue().get(0)).getName());
 		for (String keys : entry.getKey()) {
 		    System.out.println("\t" + keys);
 		}
 		System.out.println();
 	    }
+	    System.out
+		    .println("--------------------------------------------------------");
 	}
     }
 
@@ -376,11 +442,13 @@ public class MainClass {
 			} catch (Exception e) {
 			    e.printStackTrace();
 			}
-		    } else if (fileEntry.getName().endsWith(".java")) {
-			// genCodeAndTestClassSourceFiles.put(
-			// fileEntry.getAbsolutePath(),
-			// fileEntry.getName());
 		    }
+
+		    // else if (fileEntry.getName().endsWith(".java")) {
+		    // genCodeAndTestClassSourceFiles.put(
+		    // fileEntry.getAbsolutePath(),
+		    // fileEntry.getName());
+		    // }
 		}
 	    }
 	} catch (Exception e) {
@@ -389,8 +457,101 @@ public class MainClass {
     }
 
     /* Compile Gen Code */
-    private static void compileGeneratedCodetoGetClassFile() {
+    private static void compileGeneratedCodeAndLoad(String directory,
+	    List<String> generatedJavaFile, String packageName) {
+	String classpath = System.getProperty("java.class.path");
+	String testpath = directory.concat(";") + classpath;
+	List<String> optionList = new ArrayList<String>();
+	optionList.addAll(Arrays.asList("-classpath", testpath));
+	try {
+	    JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+	    /*
+	     * To run JavaCompiler System should run in JDK not in JRE. For that
+	     * java.home property should indicate to JDK main directory
+	     */
+	    if (compiler == null) {
+		/* try to run with guessed location */
+		String jdkVersion = System.getProperty("java.version");
+		String jreLocation = System.getProperty("java.home");
+		String jdkLocation = jreLocation.substring(0,
+			jreLocation.lastIndexOf(fileSeparator));
+		String lastPart = jdkLocation.substring(jdkLocation
+			.lastIndexOf(fileSeparator) + 1);
+		if (lastPart.equalsIgnoreCase("Java")) {
+		    jdkLocation = jdkLocation + fileSeparator + "jdk"
+			    + jdkVersion;
+		}
+		System.setProperty("java.home", jdkLocation);
+		compiler = ToolProvider.getSystemJavaCompiler();
+		if (compiler == null) {
+		    /* try to run with provided jdk directory */
+		    System.out.println("Please run system in JDK not in JRE.");
+		    System.out
+			    .print("Ener JDK directory location. (ex: D:/Program Files/Java/jdk1.7.0_40) :\n");
+		    BufferedReader br = new BufferedReader(
+			    new InputStreamReader(System.in));
+		    String path = null;
+		    path = br.readLine();
+		    System.setProperty("java.home", path);
+		    compiler = ToolProvider.getSystemJavaCompiler();
+		    if (compiler == null) {
+			/* no more try */
+			System.err
+				.println("Sorry, could not set JAVA_HOME to JDK. Try to run again in JDK.");
+			System.exit(-1);
+		    }
+		}
+	    }
+	    StandardJavaFileManager sjfm = compiler.getStandardFileManager(
+		    null, null, null);
+	    File[] javaFiles = new File[generatedJavaFile.size()];
+	    for (int i = 0; i < generatedJavaFile.size(); i++) {
+		javaFiles[i] = new File(generatedJavaFile.get(i)
+			.concat(".java"));
+	    }
 
+	    Iterable<? extends JavaFileObject> fileObjects = sjfm
+		    .getJavaFileObjects(javaFiles);
+	    JavaCompiler.CompilationTask task = compiler.getTask(null, null,
+		    null, optionList, null, fileObjects);
+	    task.call();
+	    sjfm.close();
+	} catch (Exception e) {
+	    e.printStackTrace();
+	    System.exit(-1);
+	}
+	System.out.println("!!!Compilation Successful!!!");
+
+	try {
+	    for (int i = 0; i < generatedJavaFile.size(); i++) {
+		URLClassLoader classLoader = null;
+		try {
+		    classLoader = URLClassLoader
+			    .newInstance(new URL[] { new File(directory)
+				    .toURI().toURL() });
+		} catch (MalformedURLException e) {
+		    e.printStackTrace();
+		}
+		String name = generatedJavaFile.get(i)
+			.substring(
+				generatedJavaFile.get(i).lastIndexOf(
+					fileSeparator) + 1);
+		name = (packageName + "." + name).trim();
+		Class<?> clss = null;
+		try {
+		    clss = Class.forName(name, true, classLoader);
+		    allClasses.add(clss);
+		    classDescriptions.add(new Description(clss,
+			    ClassCategory.REGULAR, classDescriptions,
+			    nonTestClasses));
+		} catch (ClassNotFoundException e) {
+		    e.printStackTrace();
+		}
+	    }
+	    System.out.println("!!!Class Successfully Loaded!!!");
+	} catch (Exception e) {
+	    e.printStackTrace();
+	}
     }
 
     /*
@@ -469,5 +630,20 @@ public class MainClass {
 	// Method[] ms = cls.getDeclaredMethods();
 	// Method m = ms[0];
 	// System.out.println(m);
+    }
+}
+
+class Progress implements Runnable {
+    @Override
+    public void run() {
+	while (!Thread.currentThread().isInterrupted()) {
+	    try {
+		System.out.print(".");
+		Thread.sleep(1000);
+	    } catch (InterruptedException e) {
+		Thread.currentThread().interrupt();
+	    } catch (Exception e) {
+	    }
+	}
     }
 }
