@@ -22,7 +22,6 @@ package tools.code.gen;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.URL;
@@ -52,7 +51,8 @@ public class MainClass {
      */
     private static File file = null;
     /*
-     * Keep All classes
+     * Keep All classes that can be retrieve from class file, it's not
+     * containing any inner class
      */
     private static Set<Class<?>> allClasses = new HashSet<Class<?>>();
     /*
@@ -60,14 +60,17 @@ public class MainClass {
      */
     private static Set<Class<?>> testClasses = new HashSet<Class<?>>();
     /*
-     * Keep the list of all non test classes
+     * Keep the list of all non test classes, should pass as parameter to
+     * Description so that inner class can be treat as non test class
      */
     private static Set<Class<?>> nonTestClasses = new HashSet<Class<?>>();
     /*
-     * Save output class directory information, so that it can print at the end
-     * of code generation, Key: Directory, Value: Java file name
+     * Keep all the description of a Class file or Java file to create a report
+     * of the process
      */
-    private static HashMap<String, String> outputClassDirectory = new HashMap<String, String>();
+    private static List<Description> classDescriptions = new ArrayList<Description>();
+    /* Keep list of all generated .java file and test class */
+    private static HashMap<List<String>, Class<?>> outputClassesDirectory = new HashMap<List<String>, Class<?>>();
     /*
      * Keep all generated source files list and its name of its original test
      * class source file name, Key: location with file name, Value: File Name
@@ -77,11 +80,6 @@ public class MainClass {
      * Keep source files list, Key: location with file name, Value: File Name
      */
     private static HashMap<String, String> sourceFiles = new HashMap<String, String>();
-    /*
-     * Keep all the description of a Class file or Java file to create a report
-     * of the process
-     */
-    private static List<Description> classDescriptions = new ArrayList<Description>();
 
     public static void main(String[] args) {
 	// Description d = new Description(graphs.DirectedGraph.class,
@@ -108,11 +106,11 @@ public class MainClass {
 	// new CallGraph(path)
 	// print(d);
 	verifySourcodeForGenCode();
-	String path = "";
-	for (Entry<String, String> entry : sourceFiles.entrySet()) {
-	    path = entry.getKey().concat(entry.getValue());
-	    break;
-	}
+	// String path = "";
+	// for (Entry<String, String> entry : sourceFiles.entrySet()) {
+	// path = entry.getKey().concat(entry.getValue());
+	// break;
+	// }
 
 	// DirectedGraphInterface dg = new
 	// CallGraph("C:\\temp\\a\\graphs\\test")
@@ -159,6 +157,7 @@ public class MainClass {
      * @author Shohel Shamim
      */
     public static void codeGen(String[] args, boolean isMethodSorted) {
+	List<String> generatedCodeFileList = null;
 	try {
 	    String fileLocation = args[0].trim();
 	    // Get specific class name
@@ -194,12 +193,14 @@ public class MainClass {
 		if (result != null && !result.getFailures().isEmpty()) {
 		    nonTestClasses.add(cls);
 		    classDescriptions.add(new Description(cls,
-			    ClassCategory.REGULAR, classDescriptions));
+			    ClassCategory.REGULAR, classDescriptions,
+			    nonTestClasses));
 		    System.out.println("\tis not a Test Class");
 		} else {
 		    testClasses.add(cls);
 		    classDescriptions.add(new Description(cls,
-			    ClassCategory.TEST, classDescriptions));
+			    ClassCategory.TEST, classDescriptions,
+			    nonTestClasses));
 		    System.out
 			    .println("-------------------------------------------");
 		    System.out.println(cls.getName() + " is a Test Class");
@@ -240,15 +241,16 @@ public class MainClass {
 		// If looking for only one test class then other class record
 		// needs to describe, if specified a JUnit test class then it
 		// will mark other test class as normal class
-		// if (nonTestClasses.isEmpty()) {
-		// for (Class<?> cls : allClasses) {
-		// if (!testClasses.contains(cls)) {
-		// nonTestClasses.add(cls);
-		// classDescriptions.add(new Description(cls,
-		// ClassCategory.REGULAR));
-		// }
-		// }
-		// }
+		if (nonTestClasses.isEmpty()) {
+		    for (Class<?> cls : allClasses) {
+			if (!testClasses.contains(cls)) {
+			    nonTestClasses.add(cls);
+			    classDescriptions.add(new Description(cls,
+				    ClassCategory.REGULAR, classDescriptions,
+				    nonTestClasses));
+			}
+		    }
+		}
 		for (Class<?> clss : testClasses) {
 		    /*
 		     * Changed to class original name instead of hard coded
@@ -284,23 +286,25 @@ public class MainClass {
 		    GenerateOutput outputClass = new GenerateOutput(clss,
 			    packageName, outputClassName, methodShouldSort,
 			    directory);
+
 		    /*
 		     * outputClass.execute() to write code in file; it returns
 		     * code as output
 		     */
 		    System.out.println("\n****** Generating Code for "
-			    + clss.getName() + " ******");
-		    // System.out.println(outputClass.execute());
-		    outputClass.execute();
+			    + clss.getName() + " ******\n");
+		    generatedCodeFileList = outputClass.execute();
+		    if (outputClass.isWritingComplete()) {
+			System.out
+				.println("\tCode Generation Completed. Main Class File is: "
+					+ outputClassName + ".java");
+			// Key is list of .java files and value is class
+			outputClassesDirectory.put(generatedCodeFileList, clss);
+			// Description genCodeDesc = new Description(clss,
+			// false);
+			// classDescriptions.add(genCodeDesc);
+		    }
 		    outputClass = null;
-		    System.out.println("\tCode Generation Complete as "
-			    + outputClassName + ".java");
-		    // Key is path with .java file and value is class name
-		    outputClassDirectory.put(
-			    (directory + outputClassName + ".java"),
-			    clss.getSimpleName());
-		    // Description genCodeDesc = new Description(clss, false);
-		    // classDescriptions.add(genCodeDesc);
 		}
 	    }
 	} catch (Exception e) {
@@ -313,8 +317,14 @@ public class MainClass {
 	    System.out
 		    .println("--------------------------------------------------------");
 
-	    for (Entry<String, String> entry : outputClassDirectory.entrySet()) {
-		System.out.println(entry.getKey());
+	    for (Entry<List<String>, Class<?>> entry : outputClassesDirectory
+		    .entrySet()) {
+		System.out.println("Test Class: " + entry.getValue().getName()
+			+ ".class");
+		for (String keys : entry.getKey()) {
+		    System.out.println("\t" + keys);
+		}
+		System.out.println();
 	    }
 	}
     }
@@ -378,6 +388,11 @@ public class MainClass {
 	}
     }
 
+    /* Compile Gen Code */
+    private static void compileGeneratedCodetoGetClassFile() {
+
+    }
+
     /*
      * Sample code for 2nd part of the Thesis
      */
@@ -387,57 +402,57 @@ public class MainClass {
 		.println("\nWarning: Source code that you provide should be same as class file."
 			+ "Any changes in source code without re-compiling it may cause invalid results."
 			+ "\n2nd Part.....\n\n");
-	String requiredJavaFile = null;
-	String genCodeDiractory = null;
-	String searchForJavaSourceFileWithPath = null;
-	// first collect verify or collect all source code for Test classes
-	for (Entry<String, String> entry : outputClassDirectory.entrySet()) {
-	    boolean fileFound = false;
-	    requiredJavaFile = entry.getValue().concat(".java");
-	    genCodeDiractory = entry.getKey();
-	    genCodeDiractory = genCodeDiractory.substring(0,
-		    genCodeDiractory.lastIndexOf(fileSeparator) + 1);
-
-	    searchForJavaSourceFileWithPath = genCodeDiractory.trim().concat(
-		    requiredJavaFile.trim());
-	    if (genCodeAndTestClassSourceFiles
-		    .containsKey(searchForJavaSourceFileWithPath)) {
-		// if source code found in the same directory with same name
-		sourceFiles.put(genCodeDiractory, requiredJavaFile);
-	    } else {
-		while (!fileFound) {
-		    // Source code file must be named as requiredJavaFile
-		    System.out.println("Please provide source code file "
-			    + "location (ex: c:\\Temp) of : \n"
-			    + requiredJavaFile);
-
-		    File folder = null;
-		    try {
-			genCodeDiractory = br.readLine();
-			System.out.println(genCodeDiractory);
-			folder = new File(genCodeDiractory);
-		    } catch (IOException e) {
-			e.printStackTrace();
-		    }
-
-		    try {
-			for (final File fileEntry : folder.listFiles()) {
-			    if (fileEntry.getName().endsWith(".java")) {
-				if (fileEntry.getName().equalsIgnoreCase(
-					requiredJavaFile)) {
-				    fileFound = true;
-				    break;
-				}
-			    }
-			}
-		    } catch (Exception e) {
-			System.err
-				.println("Error!: Please provide a valid PATH.");
-		    }
-		}
-		sourceFiles.put(genCodeDiractory, requiredJavaFile);
-	    }
-	}
+	// String requiredJavaFile = null;
+	// String genCodeDiractory = null;
+	// String searchForJavaSourceFileWithPath = null;
+	// // first collect verify or collect all source code for Test classes
+	// for (Entry<String, String> entry : outputClassDirectory.entrySet()) {
+	// boolean fileFound = false;
+	// requiredJavaFile = entry.getValue().concat(".java");
+	// genCodeDiractory = entry.getKey();
+	// genCodeDiractory = genCodeDiractory.substring(0,
+	// genCodeDiractory.lastIndexOf(fileSeparator) + 1);
+	//
+	// searchForJavaSourceFileWithPath = genCodeDiractory.trim().concat(
+	// requiredJavaFile.trim());
+	// if (genCodeAndTestClassSourceFiles
+	// .containsKey(searchForJavaSourceFileWithPath)) {
+	// // if source code found in the same directory with same name
+	// sourceFiles.put(genCodeDiractory, requiredJavaFile);
+	// } else {
+	// while (!fileFound) {
+	// // Source code file must be named as requiredJavaFile
+	// System.out.println("Please provide source code file "
+	// + "location (ex: c:\\Temp) of : \n"
+	// + requiredJavaFile);
+	//
+	// File folder = null;
+	// try {
+	// genCodeDiractory = br.readLine();
+	// System.out.println(genCodeDiractory);
+	// folder = new File(genCodeDiractory);
+	// } catch (IOException e) {
+	// e.printStackTrace();
+	// }
+	//
+	// try {
+	// for (final File fileEntry : folder.listFiles()) {
+	// if (fileEntry.getName().endsWith(".java")) {
+	// if (fileEntry.getName().equalsIgnoreCase(
+	// requiredJavaFile)) {
+	// fileFound = true;
+	// break;
+	// }
+	// }
+	// }
+	// } catch (Exception e) {
+	// System.err
+	// .println("Error!: Please provide a valid PATH.");
+	// }
+	// }
+	// sourceFiles.put(genCodeDiractory, requiredJavaFile);
+	// }
+	// }
 
 	// Class<?> cls = A.class;
 	// System.out.println("Class Name: " + cls);

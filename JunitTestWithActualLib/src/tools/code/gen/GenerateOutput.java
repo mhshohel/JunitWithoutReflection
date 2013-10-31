@@ -60,6 +60,8 @@ public class GenerateOutput {
     private String formatPackageName;
     /* this object contains all generated code. */
     private GenerateCode generateCode;
+    /* True if file code writing complete */
+    private boolean isWritingComplete = false;
     /*
      * Max length of 65536 bytes equivalent of 524288 length of String; So, safe
      * site I have used 350000; after that length of text it will create an
@@ -79,6 +81,8 @@ public class GenerateOutput {
     private String packageName;
     /* Keep list of all required packages */
     private List<String> packages = new ArrayList<String>();
+    /* Keep generated .java file with directory location */
+    private List<String> genJavaFileListWithLocation = new ArrayList<String>();
 
     /**
      * <li><strong><i>GenerateOutput</i></strong></li>
@@ -248,8 +252,10 @@ public class GenerateOutput {
     private void createNewClasss(String codes, String className,
 	    String additionalClass, boolean defaultMethod) {
 	try {
-	    PrintWriter output = new PrintWriter(this.fileLocation + className
-		    + ".java");
+	    String fileName = (this.fileLocation + className + ".java").trim();
+	    this.genJavaFileListWithLocation.add(fileName);
+	    PrintWriter output = new PrintWriter(fileName);
+
 	    String stab = "    ";
 	    headerCodes(output, className);
 	    StringBuilder sb = new StringBuilder();
@@ -323,16 +329,19 @@ public class GenerateOutput {
      * <li><strong><i>execute</i></strong></li>
      * 
      * <pre>
-     * public String execute() <blockquote>throws</blockquote> FileNotFoundException
+     * public List<String> execute() <blockquote>throws</blockquote> FileNotFoundException
      * </pre>
      * 
      * <p>
      * Execute output; Write code in file, format code and return code as output
      * </p>
      * 
+     * @return List<String> - return list of Generated .java files name and
+     *         directory
+     * 
      * @author Shohel Shamim
      */
-    public String execute() throws FileNotFoundException {
+    public List<String> execute() throws FileNotFoundException {
 	deleteExistingOutputFilesBeforeRun();
 	for (String str : this.generateCode.getPackages()) {
 	    this.packages.add(str);
@@ -342,9 +351,12 @@ public class GenerateOutput {
 	boolean isExternalClassCreated = false;
 	String mainEntry = stab + "public static void main(String[] args) {\n"
 		+ stab + stab + "try {\n";
+	PrintWriter output = null;
 	try {
-	    PrintWriter output = new PrintWriter(this.fileLocation
-		    + this.outputClassFile);
+	    this.isWritingComplete = false;
+	    String fileName = (this.fileLocation + this.outputClassFile).trim();
+	    this.genJavaFileListWithLocation.add(fileName);
+	    output = new PrintWriter(fileName);
 	    headerCodes(output, this.outputClassName);
 	    output.print(this.formatPackageName);
 	    int length = this.generateCode.getCodes().size();
@@ -426,11 +438,13 @@ public class GenerateOutput {
 			this.generateCode.getParamSuppClassName(), "", false);
 	    }
 	    output.print("}\n");
-	    output.close();
 	} catch (FileNotFoundException e) {
 	    throw new FileNotFoundException("File location not found...");
+	} finally {
+	    output.close();
+	    this.isWritingComplete = true;
 	}
-	return "Code Writing Complete...";
+	return this.genJavaFileListWithLocation;
     }
 
     /**
@@ -527,6 +541,25 @@ public class GenerateOutput {
 	sb.append(" *\n");
 	sb.append(" */\n");
 	output.print(sb.toString());
+    }
+
+    /**
+     * <li><strong><i>isWritingComplete</i></strong></li>
+     * 
+     * <pre>
+     * public boolean isWritingComplete()
+     * </pre>
+     * 
+     * <p>
+     * Return true if code writing in file is complete
+     * </p>
+     * 
+     * @return boolean - true or false
+     * 
+     * @author Shohel Shamim
+     */
+    public boolean isWritingComplete() {
+	return this.isWritingComplete;
     }
 
     /**

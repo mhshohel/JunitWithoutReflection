@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.bcel.classfile.ClassParser;
 import org.apache.bcel.classfile.JavaClass;
@@ -52,6 +53,8 @@ public class Description {
      * classDescriptions of MainClass
      */
     List<Description> classDescriptions = null;
+    /* Keep inner class as non test class */
+    Set<Class<?>> nonTestClasses = null;
     /* Keep class name with physical location */
     private String resourceName = "";
     /* Keep class location as inputstream */
@@ -103,8 +106,10 @@ public class Description {
      * @throws Exception
      */
     public Description(Class<?> clas, ClassCategory classCategory,
-	    List<Description> classDescriptions) throws Exception {
+	    List<Description> classDescriptions, Set<Class<?>> nonTestClasses)
+	    throws Exception {
 	this.classDescriptions = classDescriptions;
+	this.nonTestClasses = nonTestClasses;
 	this.clas = clas;
 	try {
 	    this.resourceName = clas.getName().replace('.', '/') + ".class";
@@ -131,8 +136,10 @@ public class Description {
 	}
 	// Inner Class as Application
 	for (Class<?> cls : this.clas.getDeclaredClasses()) {
+	    this.nonTestClasses.add(cls);
 	    this.classDescriptions.add(new Description(cls,
-		    ClassCategory.REGULAR, this.classDescriptions));
+		    ClassCategory.REGULAR, this.classDescriptions,
+		    this.nonTestClasses));
 	    this.innerClasses.put(cls, 0);
 	}
 	// Methods

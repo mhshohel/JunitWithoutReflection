@@ -55,8 +55,8 @@ public class JCallGraph {
 
 		    Class<?> cls = TestAlgorithms.class;
 
-		    // String resourceName = cls.getName().replace('.', '/')
-		    // + ".class";
+		    String resourceName = cls.getName().replace('.', '/')
+			    + ".class";
 		    // InputStream classInputStream =
 		    // cls.getClassLoader()
 		    // .getResourceAsStream(resourceName);
