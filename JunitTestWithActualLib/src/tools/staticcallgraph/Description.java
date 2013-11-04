@@ -22,14 +22,17 @@ package tools.staticcallgraph;
 import java.io.InputStream;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.bcel.classfile.ClassParser;
 import org.apache.bcel.classfile.JavaClass;
 import org.apache.bcel.classfile.Method;
+import org.apache.bcel.generic.Type;
 
 /**
  * <li><strong>Description</strong></li>
@@ -52,9 +55,9 @@ public class Description {
      * Keep all class Description, actually it is an instance of actual
      * classDescriptions of MainClass
      */
-    List<Description> classDescriptions = null;
+    private List<Description> classDescriptions = null;
     /* Keep inner class as non test class */
-    Set<Class<?>> nonTestClasses = null;
+    private Set<Class<?>> nonTestClasses = null;
     /* Keep class name with physical location */
     private String resourceName = "";
     /* Keep class location as inputstream */
@@ -81,9 +84,28 @@ public class Description {
      * list of Methods, Key: Method name, Value: counter (how many times it
      * used)
      */
-    private Map<Method, Integer> methods = new HashMap<Method, Integer>();;
+    private Map<Method, SimpleObject> methods = new HashMap<Method, SimpleObject>();;
     /* What are the JUnit Test classes that used this class */
     private List<Class<?>> calledByTestClasses = new ArrayList<Class<?>>();
+
+    public Description(Description description) {
+	this.classDescriptions = description.classDescriptions;
+	this.nonTestClasses = description.nonTestClasses;
+	this.resourceName = description.resourceName;
+	this.classInputStream = description.classInputStream;
+	this.clas = description.clas;
+	this.javaClass = description.javaClass;
+	this.classType = description.classType;
+	this.packageName = description.packageName;
+	this.classCategory = description.classCategory;
+	this.innerClasses = description.innerClasses;
+	this.methods = description.methods;
+	this.calledByTestClasses = description.calledByTestClasses;
+    }
+
+    public Description copy() {
+	return new Description(this);
+    }
 
     /**
      * <li><strong><i>Description</i></strong></li>
@@ -118,9 +140,10 @@ public class Description {
 	    this.javaClass = new ClassParser(classInputStream, resourceName)
 		    .parse();
 	} catch (Exception e) {
-	    throw new Exception("Cannot parse Class to Java Class.");
+	    throw new Exception("Cannot parse Class to JavaClass.");
 	}
 	this.packageName = this.clas.getPackage().getName();
+	this.classCategory = classCategory;
 	// Modifier
 	int modifier = this.clas.getModifiers();
 	if (Modifier.isAbstract(modifier)) {
@@ -147,7 +170,7 @@ public class Description {
 	    // remove if method name begins with '<'
 	    String firstChar = method.getName().substring(0, 1);
 	    if (!firstChar.equalsIgnoreCase("<")) {
-		this.methods.put(method, 0);
+		this.methods.put(method, new SimpleObject());
 	    }
 	}
     }
@@ -172,7 +195,7 @@ public class Description {
      * @author Shohel Shamim
      */
     public String getClassName() {
-	return clas.getSimpleName();
+	return clas.getName();
     }
 
     /**
@@ -213,31 +236,16 @@ public class Description {
 	return this.packageName;
     }
 
-    /**
-     * <li><strong><i>getClassCategory</i></strong></li>
-     * 
-     * <pre>
-     * public String getClassCategory()
-     * </pre>
-     * 
-     * <p>
-     * Return class category: Regular, Test or GenCode
-     * </p>
-     * 
-     * @return String - a String format category.
-     * 
-     * @author Shohel Shamim
-     */
-    public String getClassCategory() {
-	return this.classCategory.toString();
+    public ClassCategory getClassCategory() {
+	return this.classCategory;
     }
 
     public Map<Class<?>, Integer> getInnerClasses() {
 	return this.innerClasses;
     }
 
-    public Map<Method, Integer> getMethods() {
-	return methods;
+    public Map<Method, SimpleObject> getMethods() {
+	return this.methods;
     }
 
     public String getMethodFullName(Method method) {
@@ -249,20 +257,37 @@ public class Description {
 	return method.getName();
     }
 
-    // /*-----------------------------------Exmine later
-    /**
-     * @return the calledByTestClasses
-     */
-    private List<Class<?>> getCalledByTestClasses() {
-	return calledByTestClasses;
+    public Method getMethodByNameAndTypeArgs(String methodName,
+	    Type[] methodTypeArgs) {
+	String name = null;
+	Type[] types = null;
+	Method method = null;
+	for (Entry<Method, SimpleObject> entry : this.methods.entrySet()) {
+	    if (methodName != null) {
+		method = entry.getKey();
+		name = method.getName();
+		System.out.println("\t\t\t\t" + name);
+		types = method.getArgumentTypes();
+		if (methodName.equalsIgnoreCase(name)) {
+		    if (Arrays.deepEquals(methodTypeArgs, types)) {
+			return method;
+		    }
+		}
+	    } else {
+		return null;
+	    }
+	}
+
+	return null;
     }
 
+    // /*-----------------------------------Exmine later
     /**
      * @param calledByTestClasses
      *            the calledByTestClasses to set
      */
-    private void setCalledByTestClasses(List<Class<?>> calledByTestClasses) {
-	this.calledByTestClasses = calledByTestClasses;
+    public void addClassToCalledByTestClasses(Class<?> clsss) {
+	this.calledByTestClasses.add(clsss);
     }
 
     /*******************************************************/
@@ -310,78 +335,116 @@ public class Description {
      * @author Shohel Shamim
      */
     public String toString() {
-	// int counter = 0;
-	// int innerClassSize = this.getInnerClasses().size();
-	// int methodsSize = this.getMethods().size();
-	// int maxCount = Math.max(innerClassSize, methodsSize);
-	// String[] classes = new String[innerClassSize];
-	// String[] methods = new String[methodsSize];
-	// int i = 0;
-	// for (Entry<String, Integer> entry :
-	// this.getInnerClasses().entrySet()) {
-	// classes[i] = entry.getKey() + "(" + entry.getValue() + ")";
-	// i++;
-	// }
-	// i = 0;
-	// for (Entry<String, SimpleObject> entry :
-	// this.getMethods().entrySet()) {
-	// methods[i] = entry.getKey() + "("
-	// + ((SimpleObject) entry.getValue()).getCounter() + ")";
-	// i++;
-	// }
-	// i = 0;
-	// StringBuffer sb = new StringBuffer();
-	// sb.append("Package,Class Type,Class Name,Class Category,Inner Class Size,Inner Classes,Methods Size,Methods Name\n");
-	// while (counter < maxCount) {
-	// if (counter == 0) {
-	// sb.append(this.getPackageName() + ",");
-	// sb.append(this.getClassType() + ",");
-	// sb.append(this.getClassName() + ",");
-	// sb.append(this.getClassCategory() + ",");
-	// sb.append(innerClassSize + ",");
-	// } else {
-	// sb.append(",,,,,");
-	// }
-	// if (counter < innerClassSize) {
-	// sb.append(classes[counter] + ",");
-	// } else {
-	// sb.append(",");
-	// }
-	// if (counter == 0) {
-	// sb.append(methodsSize + ",");
-	// } else {
-	// sb.append(",");
-	// }
-	// if (counter < methodsSize) {
-	// sb.append(methods[counter] + ",");
-	// } else {
-	// sb.append(",");
-	// }
-	// sb.append("\n");
-	// counter++;
-	// }
-	// return sb.toString();
-	return this.clas.getSimpleName();
+	int counter = 0;
+	String cName = this.getClassName();
+	int calledByTestClassSize = this.calledByTestClasses.size();
+	int innerClassSize = this.getInnerClasses().size();
+	int methodsSize = this.getMethods().size();
+	int maxCount = Math.max(Math.max(innerClassSize, methodsSize),
+		calledByTestClassSize);
+	String[] innerClasses = new String[innerClassSize];
+	String[] methods = new String[methodsSize];
+	StringBuffer sb = new StringBuffer();
+	sb.append("Package," + "Class Name," + "Class Type,"
+		+ "Class Category," + "Called By Test Classes,"
+		+ "Inner Class Size," + "Inner Classes," + "Methods Size,"
+		+ "Methods Name\n");
+	int i = 0;
+	for (Entry<Class<?>, Integer> entry : this.getInnerClasses().entrySet()) {
+	    innerClasses[i] = entry.getKey().getName() + "   count: ("
+		    + entry.getValue() + ")";
+	    i++;
+	}
+	i = 0;
+	String[] classesCalledBy = new String[calledByTestClassSize];
+	for (Class<?> cls : calledByTestClasses) {
+	    classesCalledBy[i] = cls.getName();
+	    i++;
+	}
+	i = 0;
+	String nameWithParam = null;
+	int index = 0;
+	for (Entry<Method, SimpleObject> entry : this.getMethods().entrySet()) {
+	    nameWithParam = entry.getKey().toString();
+	    index = nameWithParam.indexOf('[');
+	    if (index > 0) {
+		nameWithParam = nameWithParam.substring(0, index).trim();
+	    }
+	    nameWithParam = "\"" + nameWithParam + "\"";
+	    methods[i] = nameWithParam + "   count: ("
+		    + entry.getValue().getCounter() + ")";
+	    i++;
+	}
+
+	while (counter < maxCount) {
+	    if (counter == 0) {
+		sb.append(this.getPackageName() + ",");
+		sb.append(this.getClassName() + " count: ("
+			+ this.calledByTestClasses.size() + "),");
+		sb.append(this.getClassType() + ",");
+		sb.append(this.getClassCategory() + ",");
+		if (counter < calledByTestClassSize) {
+		    sb.append(classesCalledBy[counter] + ",");
+		} else {
+		    sb.append(",");
+		}
+		sb.append(innerClassSize + ",");
+		if (counter < innerClassSize) {
+		    sb.append(innerClasses[counter] + ",");
+		} else {
+		    sb.append(",");
+		}
+		sb.append(methodsSize + ",");
+		if (counter < methodsSize) {
+		    sb.append(methods[counter] + ",");
+		} else {
+		    sb.append(",");
+		}
+	    } else {
+		sb.append(",,,,");
+		if (counter < calledByTestClassSize) {
+		    sb.append(classesCalledBy[counter] + ",");
+		} else {
+		    sb.append(",");
+		}
+		sb.append(",");
+		if (counter < innerClassSize) {
+		    sb.append(innerClasses[counter] + ",");
+		} else {
+		    sb.append(",");
+		}
+		sb.append(",");
+		if (counter < methodsSize) {
+		    sb.append(methods[counter] + ",");
+		} else {
+		    sb.append(",");
+		}
+	    }
+	    sb.append("\n");
+	    counter++;
+	}
+	sb.append("\n");
+	return sb.toString();
     }
 
     /**
      * @return the resourcename
      */
-    String getResourceName() {
+    public String getResourceName() {
 	return resourceName;
     }
 
     /**
      * @return the classInputStream
      */
-    InputStream getClassInputStream() {
+    public InputStream getClassInputStream() {
 	return classInputStream;
     }
 
     /**
      * @return the javaClas
      */
-    private JavaClass getJavaClass() {
+    public JavaClass getJavaClass() {
 	return javaClass;
     }
 
@@ -414,12 +477,8 @@ public class Description {
     // }
     //
     class SimpleObject {
-	private Object object = null;
+	private List<Class<?>> objects = new ArrayList<Class<?>>();
 	private int counter = 0;
-
-	public SimpleObject(Object object) {
-	    this.object = object;
-	}
 
 	public void incrementCounter() {
 	    this.counter++;
@@ -429,8 +488,14 @@ public class Description {
 	    return this.counter;
 	}
 
-	public Object getObject() {
-	    return this.object;
+	public void addClass(Class<?> clss) {
+	    if (!this.objects.contains(clss)) {
+		this.objects.add(clss);
+	    }
+	}
+
+	public List<Class<?>> getClasses() {
+	    return this.objects;
 	}
     }
 }

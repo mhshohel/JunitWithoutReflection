@@ -46,6 +46,7 @@ import org.junit.runner.Result;
 
 import tools.staticcallgraph.Description;
 import tools.staticcallgraph.Description.ClassCategory;
+import tools.staticcallgraph.JCallGraph;
 
 public class MainClass {
     /*
@@ -82,14 +83,14 @@ public class MainClass {
      */
     private static HashMap<List<String>, List<Object>> outputClassesDirectory = new HashMap<List<String>, List<Object>>();
     /*
-     * Keep all generated source files list and its name of its original test
-     * class source file name, Key: location with file name, Value: File Name
+     * Keep Objects those are needs to check for CallGraph
      */
-    private static HashMap<String, String> genCodeAndTestClassSourceFiles = new HashMap<String, String>();
+    private static List<List<Description>> entryClassFiles = new ArrayList<List<Description>>();
     /*
-     * Keep source files list, Key: location with file name, Value: File Name
+     * temporary list of Description to keep objects those are recently used, so
+     * that searching can be faster than normal
      */
-    private static HashMap<String, String> sourceFiles = new HashMap<String, String>();
+    public static List<Description> tempDescriptionList = new ArrayList<Description>();
 
     public static void main(String[] args) {
 	// Description d = new Description(graphs.DirectedGraph.class,
@@ -131,13 +132,23 @@ public class MainClass {
 			+ entry.getValue().get(1));
 		/* Compiling and loading */
 		compileGeneratedCodeAndLoad(args[0], entry.getKey(), entry
-			.getValue().get(2).toString());
+			.getValue().get(1).toString(), entry.getValue().get(2)
+			.toString());
 		System.out
 			.println("----------------------------------------------------------------------\n");
+	    }
+	    System.out.println("--------------------------------------------");
+	    System.out.println("****** Part Three: Call Graph: Static ******");
+	    System.out.println("--------------------------------------------");
+	    for (List<Description> classObjects : entryClassFiles) {
+		lookupToGetStaticCallGraph(classObjects);
 	    }
 	} catch (Exception e) {
 	    e.printStackTrace();
 	}
+
+	// Description d = classDescriptions.get(0);
+	print();
 
 	// Description d = new Description(graphs.test.TestAlgorithms.class,
 	// ClassCategory.REGULAR);
@@ -160,10 +171,13 @@ public class MainClass {
 	// readGeneratedTestCode();
     }
 
-    public static void print(Description d) {
+    public static void print() {
 	try {
 	    PrintWriter output = new PrintWriter("c:\\temp\\EX.csv");
-	    output.print(d);
+	    for (Description description : classDescriptions) {
+		output.print(description);
+	    }
+	    output.print("\n");
 	    output.close();
 	} catch (FileNotFoundException e) {
 	    e.printStackTrace();
@@ -346,14 +360,12 @@ public class MainClass {
 
 		    generatedCodeFileList = outputClass.execute();
 		    if (outputClass.isWritingComplete()) {
-			String mainFileName = (outputClassName + ".java")
-				.trim();
 			System.out
 				.println("\n\tCode Generation Completed. Main Class File is: "
-					+ mainFileName);
+					+ outputClassName + ".java");
 			List<Object> objects = new ArrayList<Object>();
 			objects.add(clss);
-			objects.add(mainFileName);
+			objects.add(outputClassName);
 			objects.add(clss.getPackage().getName());
 			// Key is list of .java files and value is class
 			outputClassesDirectory.put(generatedCodeFileList,
@@ -458,7 +470,8 @@ public class MainClass {
 
     /* Compile Gen Code */
     private static void compileGeneratedCodeAndLoad(String directory,
-	    List<String> generatedJavaFile, String packageName) {
+	    List<String> generatedJavaFile, String mainClassFileName,
+	    String packageName) {
 	String classpath = System.getProperty("java.class.path");
 	String testpath = directory.concat(";") + classpath;
 	List<String> optionList = new ArrayList<String>();
@@ -522,6 +535,8 @@ public class MainClass {
 	}
 	System.out.println("!!!Compilation Successful!!!");
 
+	Description description = null;
+	List<Description> classObjects = new ArrayList<Description>();
 	try {
 	    for (int i = 0; i < generatedJavaFile.size(); i++) {
 		URLClassLoader classLoader = null;
@@ -536,18 +551,32 @@ public class MainClass {
 			.substring(
 				generatedJavaFile.get(i).lastIndexOf(
 					fileSeparator) + 1);
+		boolean isMainClass = (name.equalsIgnoreCase(mainClassFileName)) ? true
+			: false;
 		name = (packageName + "." + name).trim();
 		Class<?> clss = null;
 		try {
 		    clss = Class.forName(name, true, classLoader);
 		    allClasses.add(clss);
-		    classDescriptions.add(new Description(clss,
-			    ClassCategory.REGULAR, classDescriptions,
-			    nonTestClasses));
+		    description = new Description(clss, ClassCategory.REGULAR,
+			    classDescriptions, nonTestClasses);
+		    classDescriptions.add(description);
+		    // make sure that main class object is at the top position
+		    if (isMainClass) {
+			if (classObjects.isEmpty()) {
+			    classObjects.add(description);
+			} else {
+			    classObjects.add(classObjects.get(0));
+			    classObjects.add(0, description);
+			}
+		    } else {
+			classObjects.add(description);
+		    }
 		} catch (ClassNotFoundException e) {
 		    e.printStackTrace();
 		}
 	    }
+	    entryClassFiles.add(classObjects);
 	    System.out.println("!!!Class Successfully Loaded!!!");
 	} catch (Exception e) {
 	    e.printStackTrace();
@@ -555,81 +584,37 @@ public class MainClass {
     }
 
     /*
-     * Sample code for 2nd part of the Thesis
+     * Sample code for 3rd part of the Thesis
      */
-    public static void verifySourcodeForGenCode() {
-	BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-	System.out
-		.println("\nWarning: Source code that you provide should be same as class file."
-			+ "Any changes in source code without re-compiling it may cause invalid results."
-			+ "\n2nd Part.....\n\n");
-	// String requiredJavaFile = null;
-	// String genCodeDiractory = null;
-	// String searchForJavaSourceFileWithPath = null;
-	// // first collect verify or collect all source code for Test classes
-	// for (Entry<String, String> entry : outputClassDirectory.entrySet()) {
-	// boolean fileFound = false;
-	// requiredJavaFile = entry.getValue().concat(".java");
-	// genCodeDiractory = entry.getKey();
-	// genCodeDiractory = genCodeDiractory.substring(0,
-	// genCodeDiractory.lastIndexOf(fileSeparator) + 1);
-	//
-	// searchForJavaSourceFileWithPath = genCodeDiractory.trim().concat(
-	// requiredJavaFile.trim());
-	// if (genCodeAndTestClassSourceFiles
-	// .containsKey(searchForJavaSourceFileWithPath)) {
-	// // if source code found in the same directory with same name
-	// sourceFiles.put(genCodeDiractory, requiredJavaFile);
-	// } else {
-	// while (!fileFound) {
-	// // Source code file must be named as requiredJavaFile
-	// System.out.println("Please provide source code file "
-	// + "location (ex: c:\\Temp) of : \n"
-	// + requiredJavaFile);
-	//
-	// File folder = null;
-	// try {
-	// genCodeDiractory = br.readLine();
-	// System.out.println(genCodeDiractory);
-	// folder = new File(genCodeDiractory);
-	// } catch (IOException e) {
-	// e.printStackTrace();
-	// }
-	//
-	// try {
-	// for (final File fileEntry : folder.listFiles()) {
-	// if (fileEntry.getName().endsWith(".java")) {
-	// if (fileEntry.getName().equalsIgnoreCase(
-	// requiredJavaFile)) {
-	// fileFound = true;
-	// break;
-	// }
-	// }
-	// }
-	// } catch (Exception e) {
-	// System.err
-	// .println("Error!: Please provide a valid PATH.");
-	// }
-	// }
-	// sourceFiles.put(genCodeDiractory, requiredJavaFile);
-	// }
-	// }
+    public static void lookupToGetStaticCallGraph(List<Description> classObjects) {
+	if (!classObjects.isEmpty()) {
+	    // empty tempList
+	    tempDescriptionList.clear();
+	    // if need get new copy the pass new one
+	    // JCallGraph jCallGraph = new JCallGraph();
+	    for (Description entryDescription : classObjects) {
+		JCallGraph.lookInsideClass(entryDescription.getActualClass(),
+			entryDescription.getJavaClass(), entryDescription,
+			classDescriptions);
+	    }
+	}
+    }
 
-	// Class<?> cls = A.class;
-	// System.out.println("Class Name: " + cls);
-	// // Methods
-	// System.out.println("Methods:" + cls.getDeclaredMethods().length);
-	// // Inner classes
-	// System.out.println("Inner Classes: " +
-	// cls.getDeclaredClasses().length);
-	// // Constructors
-	// System.out.println("Constructors: "
-	// + cls.getDeclaredConstructors().length);
-	// // Fields
-	// System.out.println("Fields :" + cls.getDeclaredFields().length);
-	// Method[] ms = cls.getDeclaredMethods();
-	// Method m = ms[0];
-	// System.out.println(m);
+    public static Description getDescriptionByActualClassName(String name) {
+	if (!tempDescriptionList.isEmpty()) {
+	    for (Description description : classDescriptions) {
+		if (description.getClassName().equals(name)) {
+		    return description;
+		}
+	    }
+	}
+	for (Description description : classDescriptions) {
+	    if (description.getClassName().equals(name)) {
+		tempDescriptionList.add(description);
+		return description;
+	    }
+	}
+	return null;
     }
 }
 

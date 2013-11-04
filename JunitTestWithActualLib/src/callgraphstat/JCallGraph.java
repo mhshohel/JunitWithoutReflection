@@ -19,10 +19,9 @@
  */
 package callgraphstat;
 
-import graphs.test.TestAlgorithms;
-
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Enumeration;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -53,10 +52,20 @@ public class JCallGraph {
 		    if (!entry.getName().endsWith(".class"))
 			continue;
 
-		    Class<?> cls = TestAlgorithms.class;
+		    Class<?> cls = WorldClass.class;
 
 		    String resourceName = cls.getName().replace('.', '/')
 			    + ".class";
+		    JavaClass javaClass = null;
+		    try {
+			InputStream classInputStream = cls.getClassLoader()
+				.getResourceAsStream(resourceName);
+			javaClass = new ClassParser(classInputStream,
+				resourceName).parse();
+		    } catch (Exception e) {
+
+		    }
+
 		    // InputStream classInputStream =
 		    // cls.getClassLoader()
 		    // .getResourceAsStream(resourceName);
@@ -64,8 +73,9 @@ public class JCallGraph {
 
 		    cp = new ClassParser(arg, entry.getName());
 		    JavaClass jc = cp.parse();
-		    ClassVisitor visitor = new ClassVisitor(jc);
+		    ClassVisitor visitor = new ClassVisitor(javaClass);
 		    visitor.start();
+		    break;
 		}
 	    }
 	} catch (IOException e) {

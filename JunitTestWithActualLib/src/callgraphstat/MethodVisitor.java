@@ -32,6 +32,7 @@ import org.apache.bcel.generic.InstructionConstants;
 import org.apache.bcel.generic.InstructionHandle;
 import org.apache.bcel.generic.MethodGen;
 import org.apache.bcel.generic.ReturnInstruction;
+import org.apache.bcel.generic.Type;
 
 public class MethodVisitor extends EmptyVisitor {
     JavaClass visitedClass;
@@ -70,6 +71,12 @@ public class MethodVisitor extends EmptyVisitor {
     public void visitINVOKEVIRTUAL(INVOKEVIRTUAL i) {
 	System.out.println(String.format(format, "M", i.getReferenceType(cp),
 		i.getMethodName(cp)));
+
+	String s = i.getName(cp);
+	Type[] ss = i.getArgumentTypes(cp);
+	for (Type t : ss) {
+	    System.out.println("\t\tTYPES: " + t);
+	}
     }
 
     @Override
