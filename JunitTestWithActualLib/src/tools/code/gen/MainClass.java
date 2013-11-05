@@ -47,6 +47,8 @@ import org.junit.runner.Result;
 import tools.staticcallgraph.Description;
 import tools.staticcallgraph.Description.ClassCategory;
 import tools.staticcallgraph.JCallGraph;
+import tools.staticcallgraph.OPCodeDescription;
+import callgraphstat.ClassVisitor;
 
 public class MainClass {
     /*
@@ -87,10 +89,10 @@ public class MainClass {
      */
     private static List<List<Description>> entryClassFiles = new ArrayList<List<Description>>();
     /*
-     * temporary list of Description to keep objects those are recently used, so
-     * that searching can be faster than normal
+     * test classes list of Description to keep objects those are recently used,
+     * so that searching can be faster than normal
      */
-    public static List<Description> tempDescriptionList = new ArrayList<Description>();
+    public static List<Description> testDescriptionList = new ArrayList<Description>();
 
     public static void main(String[] args) {
 	// Description d = new Description(graphs.DirectedGraph.class,
@@ -140,8 +142,9 @@ public class MainClass {
 	    System.out.println("--------------------------------------------");
 	    System.out.println("****** Part Three: Call Graph: Static ******");
 	    System.out.println("--------------------------------------------");
+	    readOpCodeOfTestClasses();
 	    for (List<Description> classObjects : entryClassFiles) {
-		lookupToGetStaticCallGraph(classObjects);
+		// lookupToGetStaticCallGraph(classObjects);
 	    }
 	} catch (Exception e) {
 	    e.printStackTrace();
@@ -169,6 +172,33 @@ public class MainClass {
 	// Strign path = sourceFiles.get
 	// readTestClasses();
 	// readGeneratedTestCode();
+    }
+
+    private static List<OPCodeDescription> testClassOpCode = new ArrayList<OPCodeDescription>();
+
+    private static void readOpCodeOfTestClasses() {
+
+	for (Description description : testDescriptionList) {
+	    OPCodeDescription opCodeDescription = new OPCodeDescription();
+	    JCallGraph.lookInsideClass(opCodeDescription, description,
+		    description.getActualClass(), description.getJavaClass());
+	    testClassOpCode.add(opCodeDescription);
+	    int total = 0;
+	    total += opCodeDescription.getOneTimeUseOnly().getInterfaceCall()
+		    .size();
+	    total += opCodeDescription.getOneTimeUseOnly().getMethodCall()
+		    .size();
+	    total += opCodeDescription.getOneTimeUseOnly().getObjectCall()
+		    .size();
+	    total += opCodeDescription.getOneTimeUseOnly().getStaticCall()
+		    .size();
+	    total += opCodeDescription.getOthers().getInterfaceCall().size();
+	    total += opCodeDescription.getOthers().getMethodCall().size();
+	    total += opCodeDescription.getOthers().getObjectCall().size();
+	    total += opCodeDescription.getOthers().getStaticCall().size();
+	    System.out.println(total);
+	}
+	System.out.println();
     }
 
     public static void print() {
@@ -250,9 +280,11 @@ public class MainClass {
 		    System.out.println("\tis not a Test Class");
 		} else {
 		    testClasses.add(cls);
-		    classDescriptions.add(new Description(cls,
+		    Description description = new Description(cls,
 			    ClassCategory.TEST, classDescriptions,
-			    nonTestClasses));
+			    nonTestClasses);
+		    classDescriptions.add(description);
+		    testDescriptionList.add(description);
 		    System.out
 			    .println("-------------------------------------------");
 		    System.out.println(cls.getName() + " is a Test Class");
@@ -589,19 +621,25 @@ public class MainClass {
     public static void lookupToGetStaticCallGraph(List<Description> classObjects) {
 	if (!classObjects.isEmpty()) {
 	    // empty tempList
-	    tempDescriptionList.clear();
+	    // testDescriptionList.clear();
 	    // if need get new copy the pass new one
 	    // JCallGraph jCallGraph = new JCallGraph();
-	    for (Description entryDescription : classObjects) {
-		JCallGraph.lookInsideClass(entryDescription.getActualClass(),
-			entryDescription.getJavaClass(), entryDescription,
-			classDescriptions);
-	    }
+
+	    // for (Description entryDescription : classObjects) {
+	    // JCallGraph.lookInsideClass(entryDescription.getActualClass(),
+	    // entryDescription.getJavaClass(), entryDescription,
+	    // classDescriptions);
+	    // }
+
+	    Description d = getDescriptionByActualClassName("graphs.test.TestAlgorithms");
+
+	    ClassVisitor visitor = new ClassVisitor(d.getJavaClass());
+	    visitor.start();
 	}
     }
 
     public static Description getDescriptionByActualClassName(String name) {
-	if (!tempDescriptionList.isEmpty()) {
+	if (!testDescriptionList.isEmpty()) {
 	    for (Description description : classDescriptions) {
 		if (description.getClassName().equals(name)) {
 		    return description;
@@ -610,7 +648,7 @@ public class MainClass {
 	}
 	for (Description description : classDescriptions) {
 	    if (description.getClassName().equals(name)) {
-		tempDescriptionList.add(description);
+		testDescriptionList.add(description);
 		return description;
 	    }
 	}

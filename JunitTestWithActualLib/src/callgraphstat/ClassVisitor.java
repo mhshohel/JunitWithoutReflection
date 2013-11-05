@@ -78,8 +78,8 @@ public class ClassVisitor extends EmptyVisitor {
 		String rest = input.substring(in);
 
 		// if (!word.equalsIgnoreCase("java")) {
-		System.out.println(String.format(classReferenceFormat,
-			referencedClass + "   " + word));
+		// System.out.println(String.format(classReferenceFormat,
+		// referencedClass + "   " + word));
 		// }
 	    }
 	}

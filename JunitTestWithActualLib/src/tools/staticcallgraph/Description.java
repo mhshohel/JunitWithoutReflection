@@ -266,10 +266,10 @@ public class Description {
 	    if (methodName != null) {
 		method = entry.getKey();
 		name = method.getName();
-		System.out.println("\t\t\t\t" + name);
 		types = method.getArgumentTypes();
 		if (methodName.equalsIgnoreCase(name)) {
 		    if (Arrays.deepEquals(methodTypeArgs, types)) {
+			System.out.println("\t\t\t\tMATCHED: " + name);
 			return method;
 		    }
 		}
@@ -380,7 +380,7 @@ public class Description {
 	    if (counter == 0) {
 		sb.append(this.getPackageName() + ",");
 		sb.append(this.getClassName() + " count: ("
-			+ this.calledByTestClasses.size() + "),");
+			+ calledByTestClassSize + "),");
 		sb.append(this.getClassType() + ",");
 		sb.append(this.getClassCategory() + ",");
 		if (counter < calledByTestClassSize) {
