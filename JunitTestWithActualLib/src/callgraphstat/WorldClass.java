@@ -33,6 +33,10 @@ class WorldClass {
 	Sec ss = new Sec(new Sec());
     }
 
+    public void testing() {
+
+    }
+
     public void methodTwo() {
 	this.sec.dck();
     }

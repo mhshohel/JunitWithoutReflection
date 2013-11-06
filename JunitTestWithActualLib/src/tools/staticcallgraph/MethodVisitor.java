@@ -100,17 +100,23 @@ public class MethodVisitor extends EmptyVisitor {
 	Description description = MainClass
 		.getDescriptionByActualClassName(referenceType);
 	if (description != null) {
-	    System.out.println(String.format(this.format, "M",
-		    invokevirtual.getReferenceType(this.constantPoolGen),
-		    invokevirtual.getMethodName(this.constantPoolGen)));
+
 	    if (methodGenName.charAt(0) == '<') {
 		this.opCodeDescription.getOneTimeUseOnly().addtMethodCall(
 			this.visitedClass, this.methodGen,
 			this.constantPoolGen, invokevirtual);
+		System.out.println(String.format(this.format, "M",
+			invokevirtual.getReferenceType(this.constantPoolGen),
+			invokevirtual.getMethodName(this.constantPoolGen)));
 	    } else {
-		this.opCodeDescription.getOthers().addtMethodCall(
+		this.opCodeDescription.getOtherMethodByNameAndType(
+			this.methodGen.getName(),
+			this.methodGen.getArgumentTypes()).addtMethodCall(
 			this.visitedClass, this.methodGen,
 			this.constantPoolGen, invokevirtual);
+		System.out.println(String.format(this.format, "M",
+			invokevirtual.getReferenceType(this.constantPoolGen),
+			invokevirtual.getMethodName(this.constantPoolGen)));
 	    }
 	}
     }
@@ -123,17 +129,23 @@ public class MethodVisitor extends EmptyVisitor {
 	Description description = MainClass
 		.getDescriptionByActualClassName(referenceType);
 	if (description != null) {
-	    System.out.println(String.format(this.format, "I",
-		    invokeinterface.getReferenceType(this.constantPoolGen),
-		    invokeinterface.getMethodName(this.constantPoolGen)));
+
 	    if (methodGenName.charAt(0) == '<') {
 		this.opCodeDescription.getOneTimeUseOnly().addInterfaceCall(
 			this.visitedClass, this.methodGen,
 			this.constantPoolGen, invokeinterface);
+		System.out.println(String.format(this.format, "I",
+			invokeinterface.getReferenceType(this.constantPoolGen),
+			invokeinterface.getMethodName(this.constantPoolGen)));
 	    } else {
-		this.opCodeDescription.getOthers().addInterfaceCall(
+		this.opCodeDescription.getOtherMethodByNameAndType(
+			this.methodGen.getName(),
+			this.methodGen.getArgumentTypes()).addInterfaceCall(
 			this.visitedClass, this.methodGen,
 			this.constantPoolGen, invokeinterface);
+		System.out.println(String.format(this.format, "I",
+			invokeinterface.getReferenceType(this.constantPoolGen),
+			invokeinterface.getMethodName(this.constantPoolGen)));
 	    }
 	}
     }
@@ -146,17 +158,23 @@ public class MethodVisitor extends EmptyVisitor {
 	Description description = MainClass
 		.getDescriptionByActualClassName(referenceType);
 	if (description != null) {
-	    System.out.println(String.format(this.format, "O",
-		    invokespecial.getReferenceType(this.constantPoolGen),
-		    invokespecial.getMethodName(this.constantPoolGen)));
+
 	    if (methodGenName.charAt(0) == '<') {
 		this.opCodeDescription.getOneTimeUseOnly().addObjectCall(
 			this.visitedClass, this.methodGen,
 			this.constantPoolGen, invokespecial);
+		System.out.println(String.format(this.format, "O",
+			invokespecial.getReferenceType(this.constantPoolGen),
+			invokespecial.getMethodName(this.constantPoolGen)));
 	    } else {
-		this.opCodeDescription.getOthers().addObjectCall(
+		this.opCodeDescription.getOtherMethodByNameAndType(
+			this.methodGen.getName(),
+			this.methodGen.getArgumentTypes()).addObjectCall(
 			this.visitedClass, this.methodGen,
 			this.constantPoolGen, invokespecial);
+		System.out.println(String.format(this.format, "O",
+			invokespecial.getReferenceType(this.constantPoolGen),
+			invokespecial.getMethodName(this.constantPoolGen)));
 	    }
 	}
     }
@@ -169,17 +187,22 @@ public class MethodVisitor extends EmptyVisitor {
 	Description description = MainClass
 		.getDescriptionByActualClassName(referenceType);
 	if (description != null) {
-	    System.out.println(String.format(this.format, "S",
-		    invokestatic.getReferenceType(this.constantPoolGen),
-		    invokestatic.getMethodName(this.constantPoolGen)));
 	    if (methodGenName.charAt(0) == '<') {
 		this.opCodeDescription.getOneTimeUseOnly().addStaticCall(
 			this.visitedClass, this.methodGen,
 			this.constantPoolGen, invokestatic);
+		System.out.println(String.format(this.format, "S",
+			invokestatic.getReferenceType(this.constantPoolGen),
+			invokestatic.getMethodName(this.constantPoolGen)));
 	    } else {
-		this.opCodeDescription.getOthers().addStaticCall(
+		this.opCodeDescription.getOtherMethodByNameAndType(
+			this.methodGen.getName(),
+			this.methodGen.getArgumentTypes()).addStaticCall(
 			this.visitedClass, this.methodGen,
 			this.constantPoolGen, invokestatic);
+		System.out.println(String.format(this.format, "S",
+			invokestatic.getReferenceType(this.constantPoolGen),
+			invokestatic.getMethodName(this.constantPoolGen)));
 	    }
 	}
     }

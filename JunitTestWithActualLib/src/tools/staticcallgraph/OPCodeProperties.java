@@ -29,12 +29,25 @@ import org.apache.bcel.generic.INVOKESPECIAL;
 import org.apache.bcel.generic.INVOKESTATIC;
 import org.apache.bcel.generic.INVOKEVIRTUAL;
 import org.apache.bcel.generic.MethodGen;
+import org.apache.bcel.generic.Type;
 
 public class OPCodeProperties {
     private List<INVOKEVIRTUALProperties> methodCall = new ArrayList<INVOKEVIRTUALProperties>();
     private List<INVOKEINTERFACEProperties> interfaceCall = new ArrayList<INVOKEINTERFACEProperties>();
     private List<INVOKESPECIALProperties> objectCall = new ArrayList<INVOKESPECIALProperties>();
     private List<INVOKESTATICProperties> staticCall = new ArrayList<INVOKESTATICProperties>();
+    // keep method name with parameters type, this method is the method which is
+    // inside the class
+    // ex: TestClass.method(); here method()
+    private INVOKEMehtodProperties method = null;
+
+    public void addMethod(String name, Type[] types) {
+	this.method = new INVOKEMehtodProperties(name, types);
+    }
+
+    public INVOKEMehtodProperties getMethod() {
+	return this.method;
+    }
 
     /**
      * @return the methodCall

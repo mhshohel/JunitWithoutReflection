@@ -177,26 +177,15 @@ public class MainClass {
     private static List<OPCodeDescription> testClassOpCode = new ArrayList<OPCodeDescription>();
 
     private static void readOpCodeOfTestClasses() {
-
+	// test classes from OPCode
 	for (Description description : testDescriptionList) {
-	    OPCodeDescription opCodeDescription = new OPCodeDescription();
+	    // for each test class
+	    OPCodeDescription opCodeDescription = new OPCodeDescription(
+		    description);
 	    JCallGraph.lookInsideClass(opCodeDescription, description,
 		    description.getActualClass(), description.getJavaClass());
+	    // if method not found means method is not implemented
 	    testClassOpCode.add(opCodeDescription);
-	    int total = 0;
-	    total += opCodeDescription.getOneTimeUseOnly().getInterfaceCall()
-		    .size();
-	    total += opCodeDescription.getOneTimeUseOnly().getMethodCall()
-		    .size();
-	    total += opCodeDescription.getOneTimeUseOnly().getObjectCall()
-		    .size();
-	    total += opCodeDescription.getOneTimeUseOnly().getStaticCall()
-		    .size();
-	    total += opCodeDescription.getOthers().getInterfaceCall().size();
-	    total += opCodeDescription.getOthers().getMethodCall().size();
-	    total += opCodeDescription.getOthers().getObjectCall().size();
-	    total += opCodeDescription.getOthers().getStaticCall().size();
-	    System.out.println(total);
 	}
 	System.out.println();
     }

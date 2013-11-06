@@ -57,6 +57,4 @@ public abstract class INVOKEProperties {
     public INVOKEMehtodProperties getMethodCalling() {
 	return this.methodCalling;
     }
-
-    // public String get
 }

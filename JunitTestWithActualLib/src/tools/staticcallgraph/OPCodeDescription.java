@@ -19,23 +19,54 @@
  */
 package tools.staticcallgraph;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import org.apache.bcel.generic.Type;
+
 public class OPCodeDescription {
     private Description description = null;
     // whenever a class calls must call oneTimeUseOnly, means new ClassA(), it
     // means we have to call below method first and only once
     private OPCodeProperties oneTimeUseOnly = null;
-    private OPCodeProperties others = null;
+    private List<OPCodeProperties> others = null;
 
-    public OPCodeDescription() {
+    public OPCodeDescription(Description description) {
+	this.description = description;
 	this.oneTimeUseOnly = new OPCodeProperties();
-	this.others = new OPCodeProperties();
+	this.others = new ArrayList<OPCodeProperties>();
+    }
+
+    public Description getDescription() {
+	return this.description;
     }
 
     public OPCodeProperties getOneTimeUseOnly() {
 	return this.oneTimeUseOnly;
     }
 
-    public OPCodeProperties getOthers() {
+    public List<OPCodeProperties> getOtherMethodInvocations() {
 	return this.others;
+    }
+
+    public OPCodeProperties getOtherMethodByNameAndType(String name,
+	    Type[] types) {
+	INVOKEMehtodProperties invokeMehtodProperties = new INVOKEMehtodProperties(
+		name, types);
+	for (OPCodeProperties other : others) {
+	    if (other.getMethod().getMethodName()
+		    .equalsIgnoreCase(invokeMehtodProperties.getMethodName())) {
+		if (Arrays.deepEquals(other.getMethod().getTypes(),
+			invokeMehtodProperties.getTypes())) {
+		    return other;
+		}
+	    }
+	}
+	OPCodeProperties opCodeProperties = new OPCodeProperties();
+	opCodeProperties.addMethod(name, types);
+	this.others.add(opCodeProperties);
+
+	return opCodeProperties;
     }
 }
