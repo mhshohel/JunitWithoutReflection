@@ -35,6 +35,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
@@ -48,7 +49,6 @@ import tools.staticcallgraph.Description;
 import tools.staticcallgraph.Description.ClassCategory;
 import tools.staticcallgraph.JCallGraph;
 import tools.staticcallgraph.OPCodeDescription;
-import callgraphstat.ClassVisitor;
 
 public class MainClass {
     /*
@@ -142,9 +142,17 @@ public class MainClass {
 	    System.out.println("--------------------------------------------");
 	    System.out.println("****** Part Three: Call Graph: Static ******");
 	    System.out.println("--------------------------------------------");
+
+	    long start = System.nanoTime();
+
 	    readOpCodeOfTestClasses();
+
+	    long end = System.nanoTime();
+	    System.out.println("\n\n\tElapsed Time: "
+		    + TimeUnit.NANOSECONDS.toNanos(start - end) + "ns\n\n");
+
 	    for (List<Description> classObjects : entryClassFiles) {
-		// lookupToGetStaticCallGraph(classObjects);
+		lookupToGetStaticCallGraph(classObjects);
 	    }
 	} catch (Exception e) {
 	    e.printStackTrace();
@@ -609,21 +617,17 @@ public class MainClass {
      */
     public static void lookupToGetStaticCallGraph(List<Description> classObjects) {
 	if (!classObjects.isEmpty()) {
-	    // empty tempList
-	    // testDescriptionList.clear();
-	    // if need get new copy the pass new one
-	    // JCallGraph jCallGraph = new JCallGraph();
+	    for (Description entryDescription : classObjects) {
+		JCallGraph.lookInsideClass(entryDescription.getActualClass(),
+			entryDescription.getJavaClass(), entryDescription,
+			classDescriptions, true);
+	    }
 
-	    // for (Description entryDescription : classObjects) {
-	    // JCallGraph.lookInsideClass(entryDescription.getActualClass(),
-	    // entryDescription.getJavaClass(), entryDescription,
-	    // classDescriptions);
-	    // }
-
-	    Description d = getDescriptionByActualClassName("graphs.test.TestAlgorithms");
-
-	    ClassVisitor visitor = new ClassVisitor(d.getJavaClass());
-	    visitor.start();
+	    // Description d =
+	    // getDescriptionByActualClassName("graphs.test.TestAlgorithms");
+	    //
+	    // ClassVisitor visitor = new ClassVisitor(d.getJavaClass());
+	    // visitor.start();
 	}
     }
 

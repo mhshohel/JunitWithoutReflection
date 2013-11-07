@@ -24,6 +24,8 @@ import org.apache.bcel.generic.ConstantPoolGen;
 import org.apache.bcel.generic.INVOKEINTERFACE;
 import org.apache.bcel.generic.MethodGen;
 
+import tools.code.gen.MainClass;
+
 public class INVOKEINTERFACEProperties extends INVOKEProperties {
     private INVOKEINTERFACE invokeinterface = null;
 
@@ -34,5 +36,15 @@ public class INVOKEINTERFACEProperties extends INVOKEProperties {
 		invokeinterface.getName(constantPoolGen),
 		invokeinterface.getArgumentTypes(constantPoolGen)));
 	this.invokeinterface = invokeinterface;
+	Description description = MainClass
+		.getDescriptionByActualClassName(this.invokeinterface
+			.getReferenceType(constantPoolGen).toString());
+	if (description != null) {
+	    addDescription(description);
+	}
+    }
+
+    public INVOKEINTERFACE getInvokeinterface() {
+	return this.invokeinterface;
     }
 }

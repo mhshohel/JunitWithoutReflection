@@ -34,6 +34,7 @@ public class ClassVisitor extends EmptyVisitor {
     private Class<?> clss = null;
     private JavaClass javaClass = null;
     private ConstantPoolGen constants = null;
+    private boolean isGeneratedCode = false;
 
     public ClassVisitor(OPCodeDescription opCodeDescription,
 	    Description description, Class<?> clss, JavaClass jc) {
@@ -45,12 +46,13 @@ public class ClassVisitor extends EmptyVisitor {
     }
 
     public ClassVisitor(Class<?> clss, JavaClass jc, Description description,
-	    List<Description> classDescriptions) {
+	    List<Description> classDescriptions, boolean isGeneratedCode) {
 	this.entryDescription = description;
 	this.classDescriptions = classDescriptions;
 	this.clss = clss;
 	this.javaClass = jc;
 	this.constants = new ConstantPoolGen(this.javaClass.getConstantPool());
+	this.isGeneratedCode = isGeneratedCode;
     }
 
     public void visitJavaClass(JavaClass jc) {
@@ -65,10 +67,14 @@ public class ClassVisitor extends EmptyVisitor {
     public void visitMethod(Method method) {
 	MethodGen methodGen = new MethodGen(method,
 		this.javaClass.getClassName(), this.constants);
-	// MethodVisitor visitor = new MethodVisitor(this.clss, this.javaClass,
-	// this.entryDescription, this.classDescriptions, methodGen);
-	MethodVisitor visitor = new MethodVisitor(this.opCodeDescription,
-		this.entryDescription, this.clss, this.javaClass, methodGen);
+	MethodVisitor visitor = null;
+	if (this.isGeneratedCode) {
+	    visitor = new MethodVisitor(this.clss, this.javaClass,
+		    this.entryDescription, this.classDescriptions, methodGen);
+	} else {
+	    visitor = new MethodVisitor(this.opCodeDescription,
+		    this.entryDescription, this.clss, this.javaClass, methodGen);
+	}
 	visitor.start();
     }
 

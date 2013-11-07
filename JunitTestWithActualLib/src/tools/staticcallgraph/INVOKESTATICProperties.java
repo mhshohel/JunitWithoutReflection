@@ -24,6 +24,8 @@ import org.apache.bcel.generic.ConstantPoolGen;
 import org.apache.bcel.generic.INVOKESTATIC;
 import org.apache.bcel.generic.MethodGen;
 
+import tools.code.gen.MainClass;
+
 public class INVOKESTATICProperties extends INVOKEProperties {
     private INVOKESTATIC invokestatic = null;
 
@@ -34,5 +36,15 @@ public class INVOKESTATICProperties extends INVOKEProperties {
 		invokestatic.getName(constantPoolGen),
 		invokestatic.getArgumentTypes(constantPoolGen)));
 	this.invokestatic = invokestatic;
+	Description description = MainClass
+		.getDescriptionByActualClassName(this.invokestatic
+			.getReferenceType(constantPoolGen).toString());
+	if (description != null) {
+	    addDescription(description);
+	}
+    }
+
+    public INVOKESTATIC getInvokestatic() {
+	return this.invokestatic;
     }
 }

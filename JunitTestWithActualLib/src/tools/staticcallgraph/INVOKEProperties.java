@@ -23,6 +23,7 @@ import org.apache.bcel.classfile.JavaClass;
 import org.apache.bcel.generic.MethodGen;
 
 public abstract class INVOKEProperties {
+    private Description description = null;
     private JavaClass javaClass = null;
     private MethodGen methodGen = null;
     // means method that is currently using
@@ -40,6 +41,16 @@ public abstract class INVOKEProperties {
 	this.methodCall = new INVOKEMehtodProperties(this.methodGen.getName(),
 		this.methodGen.getArgumentTypes());
 	this.methodCalling = methodCalling;
+    }
+
+    // this is to get description of the class quickly, it the call object not
+    // calling from
+    protected void addDescription(Description description) {
+	this.description = description;
+    }
+
+    public Description getDescription() {
+	return this.description;
     }
 
     public String getClassNameCallFrom() {

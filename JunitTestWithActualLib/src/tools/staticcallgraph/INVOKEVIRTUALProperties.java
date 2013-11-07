@@ -24,6 +24,8 @@ import org.apache.bcel.generic.ConstantPoolGen;
 import org.apache.bcel.generic.INVOKEVIRTUAL;
 import org.apache.bcel.generic.MethodGen;
 
+import tools.code.gen.MainClass;
+
 public class INVOKEVIRTUALProperties extends INVOKEProperties {
     private INVOKEVIRTUAL invokevirtual = null;
 
@@ -34,5 +36,15 @@ public class INVOKEVIRTUALProperties extends INVOKEProperties {
 		invokevirtual.getName(constantPoolGen),
 		invokevirtual.getArgumentTypes(constantPoolGen)));
 	this.invokevirtual = invokevirtual;
+	Description description = MainClass
+		.getDescriptionByActualClassName(this.invokevirtual
+			.getReferenceType(constantPoolGen).toString());
+	if (description != null) {
+	    addDescription(description);
+	}
+    }
+
+    public INVOKEVIRTUAL getInvokevirtual() {
+	return this.invokevirtual;
     }
 }

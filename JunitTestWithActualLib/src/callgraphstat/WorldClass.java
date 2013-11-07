@@ -22,7 +22,7 @@ package callgraphstat;
 class WorldClass {
     Sec sec = new Sec();
 
-    public static void methodOne() {
+    public void methodOne() {
 	Sec s = new Sec();
 	s.nurse("SD", new WorldClass());
 	new Sec().dck();
@@ -31,6 +31,7 @@ class WorldClass {
 	bbc.Nothing();
 	new Another().Ne(new Sec());
 	Sec ss = new Sec(new Sec());
+	BBC b = ano();
     }
 
     public void testing() {
@@ -39,6 +40,10 @@ class WorldClass {
 
     public void methodTwo() {
 	this.sec.dck();
+    }
+
+    public Another ano() {
+	return new Another();
     }
 }
 
