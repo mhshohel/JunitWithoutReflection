@@ -38,10 +38,10 @@ public class INVOKEINTERFACEProperties extends INVOKEProperties {
 	this.invokeinterface = invokeinterface;
 	this.type = INVOKEType.INTERFACE;
 	addDescription(callingDescription);
-	addMethodCalling(parentDescription,
+	addMethodCalling(parentDescription);
+	addMethodCall(callingDescription,
 		this.invokeinterface.getName(constantPoolGen),
 		this.invokeinterface.getArgumentTypes(constantPoolGen));
-	addMethodCall(callingDescription);
     }
 
     public INVOKEINTERFACE getInvokeinterface() {

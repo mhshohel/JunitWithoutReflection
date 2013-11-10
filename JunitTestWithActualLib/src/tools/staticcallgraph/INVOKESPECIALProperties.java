@@ -38,10 +38,10 @@ public class INVOKESPECIALProperties extends INVOKEProperties {
 	this.invokespecial = invokespecial;
 	this.type = INVOKEType.SPECIAL;
 	addDescription(callingDescription);
-	addMethodCalling(parentDescription,
+	addMethodCalling(parentDescription);
+	addMethodCall(callingDescription,
 		this.invokespecial.getName(constantPoolGen),
 		this.invokespecial.getArgumentTypes(constantPoolGen));
-	addMethodCall(callingDescription);
     }
 
     public INVOKESPECIAL getInvokespecial() {

@@ -38,10 +38,10 @@ public class INVOKEVIRTUALProperties extends INVOKEProperties {
 	this.invokevirtual = invokevirtual;
 	this.type = INVOKEType.VIRTUAL;
 	addDescription(callingDescription);
-	addMethodCalling(parentDescription,
+	addMethodCalling(parentDescription);
+	addMethodCall(callingDescription,
 		this.invokevirtual.getName(constantPoolGen),
 		this.invokevirtual.getArgumentTypes(constantPoolGen));
-	addMethodCall(callingDescription);
     }
 
     public INVOKEVIRTUAL getInvokevirtual() {

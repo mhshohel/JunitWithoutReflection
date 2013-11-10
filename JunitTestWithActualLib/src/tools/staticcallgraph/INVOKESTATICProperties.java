@@ -38,10 +38,10 @@ public class INVOKESTATICProperties extends INVOKEProperties {
 	this.invokestatic = invokestatic;
 	this.type = INVOKEType.STATIC;
 	addDescription(callingDescription);
-	addMethodCalling(parentDescription,
+	addMethodCalling(parentDescription);
+	addMethodCall(callingDescription,
 		this.invokestatic.getName(constantPoolGen),
 		this.invokestatic.getArgumentTypes(constantPoolGen));
-	addMethodCall(callingDescription);
     }
 
     public INVOKESTATIC getInvokestatic() {

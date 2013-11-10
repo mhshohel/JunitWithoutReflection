@@ -44,19 +44,15 @@ public abstract class INVOKEProperties {
 	this.classCalling = classCalling;
     }
 
-    protected void addMethodCalling(Description description, String name,
-	    Type[] types) {
-	// this.methodCallingFrom = new INVOKEMehtodProperties(description,
-	// name,
-	// types);
-	this.methodCallTo = new INVOKEMehtodProperties(description, name, types);
-    }
-
-    protected void addMethodCall(Description description) {
-	// this.methodCallTo = new INVOKEMehtodProperties(description,
-	// this.methodGen.getName(), this.methodGen.getArgumentTypes());
+    protected void addMethodCalling(Description description) {
 	this.methodCallingFrom = new INVOKEMehtodProperties(description,
 		this.methodGen.getName(), this.methodGen.getArgumentTypes());
+	String n = this.methodGen.getName();
+    }
+
+    protected void addMethodCall(Description description, String name,
+	    Type[] types) {
+	this.methodCallTo = new INVOKEMehtodProperties(description, name, types);
     }
 
     public abstract INVOKEType getType();
@@ -77,7 +73,7 @@ public abstract class INVOKEProperties {
 
     // call to
     public INVOKEMehtodProperties getMethodCallingFrom() {
-	return this.methodCallTo;
+	return this.methodCallingFrom;
     }
 
     public String getClassNameCalling() {
@@ -86,6 +82,6 @@ public abstract class INVOKEProperties {
 
     // call from
     public INVOKEMehtodProperties getMethodCallTo() {
-	return this.methodCallingFrom;
+	return this.methodCallTo;
     }
 }
