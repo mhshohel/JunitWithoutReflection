@@ -38,9 +38,9 @@ public class OPCodeDescription {
 	this.others = new ArrayList<OPCodeProperties>();
     }
 
-    public Description getDescription() {
-	return this.description;
-    }
+    // public Description getParentDescription() {
+    // return this.description;
+    // }
 
     public OPCodeProperties getOneTimeUseOnly() {
 	return this.oneTimeUseOnly;
@@ -53,7 +53,7 @@ public class OPCodeDescription {
     public OPCodeProperties getOtherMethodByNameAndType(String name,
 	    Type[] types) {
 	INVOKEMehtodProperties invokeMehtodProperties = new INVOKEMehtodProperties(
-		name, types);
+		this.description, name, types);
 	for (OPCodeProperties other : others) {
 	    if (other.getMethod().getMethodName()
 		    .equalsIgnoreCase(invokeMehtodProperties.getMethodName())) {
@@ -64,7 +64,7 @@ public class OPCodeDescription {
 	    }
 	}
 	OPCodeProperties opCodeProperties = new OPCodeProperties();
-	opCodeProperties.addMethod(name, types);
+	opCodeProperties.addMethod(this.description, name, types);
 	this.others.add(opCodeProperties);
 
 	return opCodeProperties;

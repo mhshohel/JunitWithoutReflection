@@ -87,6 +87,8 @@ public class Description {
     private Map<Method, SimpleObject> methods = new HashMap<Method, SimpleObject>();;
     /* What are the JUnit Test classes that used this class */
     private List<Class<?>> calledByTestClasses = new ArrayList<Class<?>>();
+    /* Keep opcode of test class */
+    private OPCodeDescription testClassOpCode = new OPCodeDescription(this);;
 
     public Description(Description description) {
 	this.classDescriptions = description.classDescriptions;
@@ -105,6 +107,14 @@ public class Description {
 
     public Description copy() {
 	return new Description(this);
+    }
+
+    public void addOPCodeDescription(OPCodeDescription opCodeDescription) {
+	this.testClassOpCode = opCodeDescription;
+    }
+
+    public OPCodeDescription getOPCodeDescription() {
+	return this.testClassOpCode;
     }
 
     /**
@@ -269,8 +279,30 @@ public class Description {
 		types = method.getArgumentTypes();
 		if (methodName.equalsIgnoreCase(name)) {
 		    if (Arrays.deepEquals(methodTypeArgs, types)) {
-			System.out.println("\t\t\t\tMATCHED: " + name);
 			return method;
+		    }
+		}
+	    } else {
+		return null;
+	    }
+	}
+
+	return null;
+    }
+
+    public SimpleObject getSimpleObjectByNameAndTypeArgs(String methodName,
+	    Type[] methodTypeArgs) {
+	String name = null;
+	Type[] types = null;
+	Method method = null;
+	for (Entry<Method, SimpleObject> entry : this.methods.entrySet()) {
+	    if (methodName != null) {
+		method = entry.getKey();
+		name = method.getName();
+		types = method.getArgumentTypes();
+		if (methodName.equalsIgnoreCase(name)) {
+		    if (Arrays.deepEquals(methodTypeArgs, types)) {
+			return entry.getValue();
 		    }
 		}
 	    } else {
@@ -288,6 +320,18 @@ public class Description {
      */
     public void addClassToCalledByTestClasses(Class<?> clsss) {
 	this.calledByTestClasses.add(clsss);
+    }
+
+    public boolean isTestClass() {
+	return (this.classCategory == ClassCategory.TEST);
+    }
+
+    public boolean isRegularClass() {
+	return (this.classCategory == ClassCategory.REGULAR);
+    }
+
+    public boolean isGeneratedCode() {
+	return (this.classCategory == ClassCategory.GENERATED);
     }
 
     /*******************************************************/
@@ -372,7 +416,7 @@ public class Description {
 	    }
 	    nameWithParam = "\"" + nameWithParam + "\"";
 	    methods[i] = nameWithParam + "   count: ("
-		    + entry.getValue().getCounter() + ")";
+		    + entry.getValue().getClasses().size() + ")";
 	    i++;
 	}
 
@@ -424,7 +468,8 @@ public class Description {
 	    counter++;
 	}
 	sb.append("\n");
-	return sb.toString();
+
+	return this.getActualClass().getName();// sb.toString();
     }
 
     /**
@@ -478,17 +523,8 @@ public class Description {
     //
     class SimpleObject {
 	private List<Class<?>> objects = new ArrayList<Class<?>>();
-	private int counter = 0;
 
-	public void incrementCounter() {
-	    this.counter++;
-	}
-
-	public int getCounter() {
-	    return this.counter;
-	}
-
-	public void addClass(Class<?> clss) {
+	public void addClassForMethod(Class<?> clss) {
 	    if (!this.objects.contains(clss)) {
 		this.objects.add(clss);
 	    }

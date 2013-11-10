@@ -24,10 +24,17 @@ import org.apache.bcel.generic.Type;
 public class INVOKEMehtodProperties {
     private String methodName = null;
     private Type[] types = null;
+    private Description description = null;
 
-    public INVOKEMehtodProperties(String methodName, Type[] types) {
+    public INVOKEMehtodProperties(Description description, String methodName,
+	    Type[] types) {
+	this.description = description;
 	this.methodName = methodName;
 	this.types = types;
+    }
+
+    public Description getDescription() {
+	return this.description;
     }
 
     public String getMethodName() {

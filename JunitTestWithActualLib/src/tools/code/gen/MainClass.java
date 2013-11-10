@@ -193,7 +193,8 @@ public class MainClass {
 	    JCallGraph.lookInsideClass(opCodeDescription, description,
 		    description.getActualClass(), description.getJavaClass());
 	    // if method not found means method is not implemented
-	    testClassOpCode.add(opCodeDescription);
+	    // testClassOpCode.add(opCodeDescription);
+	    description.addOPCodeDescription(opCodeDescription);
 	}
 	System.out.println();
     }

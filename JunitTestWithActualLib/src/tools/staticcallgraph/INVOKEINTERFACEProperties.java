@@ -24,27 +24,32 @@ import org.apache.bcel.generic.ConstantPoolGen;
 import org.apache.bcel.generic.INVOKEINTERFACE;
 import org.apache.bcel.generic.MethodGen;
 
-import tools.code.gen.MainClass;
+import tools.staticcallgraph.MethodVisitor.INVOKEType;
 
 public class INVOKEINTERFACEProperties extends INVOKEProperties {
     private INVOKEINTERFACE invokeinterface = null;
 
-    public INVOKEINTERFACEProperties(JavaClass javaClass, MethodGen methodGen,
-	    ConstantPoolGen constantPoolGen, INVOKEINTERFACE invokeinterface) {
+    public INVOKEINTERFACEProperties(Description parentDescription,
+	    Description callingDescription, JavaClass javaClass,
+	    MethodGen methodGen, ConstantPoolGen constantPoolGen,
+	    INVOKEINTERFACE invokeinterface) {
 	super(javaClass, methodGen, invokeinterface.getReferenceType(
-		constantPoolGen).toString(), new INVOKEMehtodProperties(
-		invokeinterface.getName(constantPoolGen),
-		invokeinterface.getArgumentTypes(constantPoolGen)));
+		constantPoolGen).toString());
 	this.invokeinterface = invokeinterface;
-	Description description = MainClass
-		.getDescriptionByActualClassName(this.invokeinterface
-			.getReferenceType(constantPoolGen).toString());
-	if (description != null) {
-	    addDescription(description);
-	}
+	this.type = INVOKEType.INTERFACE;
+	addDescription(callingDescription);
+	addMethodCalling(parentDescription,
+		this.invokeinterface.getName(constantPoolGen),
+		this.invokeinterface.getArgumentTypes(constantPoolGen));
+	addMethodCall(callingDescription);
     }
 
     public INVOKEINTERFACE getInvokeinterface() {
 	return this.invokeinterface;
+    }
+
+    @Override
+    public INVOKEType getType() {
+	return this.type;
     }
 }

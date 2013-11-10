@@ -24,27 +24,32 @@ import org.apache.bcel.generic.ConstantPoolGen;
 import org.apache.bcel.generic.INVOKESTATIC;
 import org.apache.bcel.generic.MethodGen;
 
-import tools.code.gen.MainClass;
+import tools.staticcallgraph.MethodVisitor.INVOKEType;
 
 public class INVOKESTATICProperties extends INVOKEProperties {
     private INVOKESTATIC invokestatic = null;
 
-    public INVOKESTATICProperties(JavaClass javaClass, MethodGen methodGen,
-	    ConstantPoolGen constantPoolGen, INVOKESTATIC invokestatic) {
+    public INVOKESTATICProperties(Description parentDescription,
+	    Description callingDescription, JavaClass javaClass,
+	    MethodGen methodGen, ConstantPoolGen constantPoolGen,
+	    INVOKESTATIC invokestatic) {
 	super(javaClass, methodGen, invokestatic.getReferenceType(
-		constantPoolGen).toString(), new INVOKEMehtodProperties(
-		invokestatic.getName(constantPoolGen),
-		invokestatic.getArgumentTypes(constantPoolGen)));
+		constantPoolGen).toString());
 	this.invokestatic = invokestatic;
-	Description description = MainClass
-		.getDescriptionByActualClassName(this.invokestatic
-			.getReferenceType(constantPoolGen).toString());
-	if (description != null) {
-	    addDescription(description);
-	}
+	this.type = INVOKEType.STATIC;
+	addDescription(callingDescription);
+	addMethodCalling(parentDescription,
+		this.invokestatic.getName(constantPoolGen),
+		this.invokestatic.getArgumentTypes(constantPoolGen));
+	addMethodCall(callingDescription);
     }
 
     public INVOKESTATIC getInvokestatic() {
 	return this.invokestatic;
+    }
+
+    @Override
+    public INVOKEType getType() {
+	return this.type;
     }
 }

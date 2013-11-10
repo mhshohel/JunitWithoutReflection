@@ -24,27 +24,32 @@ import org.apache.bcel.generic.ConstantPoolGen;
 import org.apache.bcel.generic.INVOKESPECIAL;
 import org.apache.bcel.generic.MethodGen;
 
-import tools.code.gen.MainClass;
+import tools.staticcallgraph.MethodVisitor.INVOKEType;
 
 public class INVOKESPECIALProperties extends INVOKEProperties {
     private INVOKESPECIAL invokespecial = null;
 
-    public INVOKESPECIALProperties(JavaClass javaClass, MethodGen methodGen,
-	    ConstantPoolGen constantPoolGen, INVOKESPECIAL invokespecial) {
+    public INVOKESPECIALProperties(Description parentDescription,
+	    Description callingDescription, JavaClass javaClass,
+	    MethodGen methodGen, ConstantPoolGen constantPoolGen,
+	    INVOKESPECIAL invokespecial) {
 	super(javaClass, methodGen, invokespecial.getReferenceType(
-		constantPoolGen).toString(), new INVOKEMehtodProperties(
-		invokespecial.getName(constantPoolGen),
-		invokespecial.getArgumentTypes(constantPoolGen)));
+		constantPoolGen).toString());
 	this.invokespecial = invokespecial;
-	Description description = MainClass
-		.getDescriptionByActualClassName(this.invokespecial
-			.getReferenceType(constantPoolGen).toString());
-	if (description != null) {
-	    addDescription(description);
-	}
+	this.type = INVOKEType.SPECIAL;
+	addDescription(callingDescription);
+	addMethodCalling(parentDescription,
+		this.invokespecial.getName(constantPoolGen),
+		this.invokespecial.getArgumentTypes(constantPoolGen));
+	addMethodCall(callingDescription);
     }
 
     public INVOKESPECIAL getInvokespecial() {
 	return this.invokespecial;
+    }
+
+    @Override
+    public INVOKEType getType() {
+	return this.type;
     }
 }

@@ -24,27 +24,32 @@ import org.apache.bcel.generic.ConstantPoolGen;
 import org.apache.bcel.generic.INVOKEVIRTUAL;
 import org.apache.bcel.generic.MethodGen;
 
-import tools.code.gen.MainClass;
+import tools.staticcallgraph.MethodVisitor.INVOKEType;
 
 public class INVOKEVIRTUALProperties extends INVOKEProperties {
     private INVOKEVIRTUAL invokevirtual = null;
 
-    public INVOKEVIRTUALProperties(JavaClass javaClass, MethodGen methodGen,
-	    ConstantPoolGen constantPoolGen, INVOKEVIRTUAL invokevirtual) {
+    public INVOKEVIRTUALProperties(Description parentDescription,
+	    Description callingDescription, JavaClass javaClass,
+	    MethodGen methodGen, ConstantPoolGen constantPoolGen,
+	    INVOKEVIRTUAL invokevirtual) {
 	super(javaClass, methodGen, invokevirtual.getReferenceType(
-		constantPoolGen).toString(), new INVOKEMehtodProperties(
-		invokevirtual.getName(constantPoolGen),
-		invokevirtual.getArgumentTypes(constantPoolGen)));
+		constantPoolGen).toString());
 	this.invokevirtual = invokevirtual;
-	Description description = MainClass
-		.getDescriptionByActualClassName(this.invokevirtual
-			.getReferenceType(constantPoolGen).toString());
-	if (description != null) {
-	    addDescription(description);
-	}
+	this.type = INVOKEType.VIRTUAL;
+	addDescription(callingDescription);
+	addMethodCalling(parentDescription,
+		this.invokevirtual.getName(constantPoolGen),
+		this.invokevirtual.getArgumentTypes(constantPoolGen));
+	addMethodCall(callingDescription);
     }
 
     public INVOKEVIRTUAL getInvokevirtual() {
 	return this.invokevirtual;
+    }
+
+    @Override
+    public INVOKEType getType() {
+	return this.type;
     }
 }

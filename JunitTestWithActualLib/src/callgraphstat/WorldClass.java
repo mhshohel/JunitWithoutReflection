@@ -21,6 +21,7 @@ package callgraphstat;
 
 class WorldClass {
     Sec sec = new Sec();
+    WorldClass wc = new WorldClass();
 
     public void methodOne() {
 	Sec s = new Sec();
@@ -32,6 +33,13 @@ class WorldClass {
 	new Another().Ne(new Sec());
 	Sec ss = new Sec(new Sec());
 	BBC b = ano();
+	Another a = getAnother();
+	getAnother();
+	Sec sss = s;
+    }
+
+    public Another getAnother() {
+	return new Another();
     }
 
     public void testing() {
@@ -44,6 +52,25 @@ class WorldClass {
 
     public Another ano() {
 	return new Another();
+    }
+
+    public WorldClass returnOwnClass() {
+	WorldClass w = new WorldClass();
+	w.ano();
+	Another an = null;
+	Sec sec = null;
+	int a = 1;
+	if (a == 2) {
+	    an = new Another();
+	} else {
+	    sec = new Sec();
+	}
+	int c = 0;
+	while (c > 5) {
+	    new WorldClass();
+	    c++;
+	}
+	return w;
     }
 }
 

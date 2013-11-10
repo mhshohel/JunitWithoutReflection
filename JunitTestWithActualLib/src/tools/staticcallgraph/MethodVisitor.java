@@ -34,6 +34,7 @@ import org.apache.bcel.generic.InstructionConstants;
 import org.apache.bcel.generic.InstructionHandle;
 import org.apache.bcel.generic.MethodGen;
 import org.apache.bcel.generic.ReturnInstruction;
+import org.apache.bcel.generic.Type;
 
 import tools.code.gen.MainClass;
 
@@ -65,6 +66,7 @@ public class MethodVisitor extends EmptyVisitor {
     public MethodVisitor(Class<?> clss, JavaClass jc, Description description,
 	    List<Description> classDescriptions, MethodGen methodGen) {
 	this.classDescriptions = classDescriptions;
+	this.entryDescription = description;
 	this.clss = clss;
 	this.visitedClass = jc;
 	this.methodGen = methodGen;
@@ -102,14 +104,25 @@ public class MethodVisitor extends EmptyVisitor {
 		this.constantPoolGen).toString();
 	Description description = MainClass
 		.getDescriptionByActualClassName(referenceType);
+	String methodName = invokevirtual.getMethodName(this.constantPoolGen)
+		.toString();
+	Type[] types = invokevirtual.getArgumentTypes(constantPoolGen);
+	INVOKEMehtodProperties methodCall = null;
 	if (description != null) {
 	    if (this.isGeneratedCode) {
 		System.out.println(String.format(this.format, "M",
 			invokevirtual.getReferenceType(this.constantPoolGen),
 			invokevirtual.getMethodName(this.constantPoolGen)));
+		methodCall = new INVOKEMehtodProperties(description,
+			methodName, types);
+		write(this.entryDescription,
+			MainClass
+				.getDescriptionByActualClassName(referenceType),
+			methodCall, INVOKEType.VIRTUAL);
 	    } else {
 		if (methodGenName.charAt(0) == '<') {
 		    this.opCodeDescription.getOneTimeUseOnly().addtMethodCall(
+			    this.entryDescription, description,
 			    this.visitedClass, this.methodGen,
 			    this.constantPoolGen, invokevirtual);
 		    System.out.println(String.format(this.format, "M",
@@ -120,6 +133,7 @@ public class MethodVisitor extends EmptyVisitor {
 		    this.opCodeDescription.getOtherMethodByNameAndType(
 			    this.methodGen.getName(),
 			    this.methodGen.getArgumentTypes()).addtMethodCall(
+			    this.entryDescription, description,
 			    this.visitedClass, this.methodGen,
 			    this.constantPoolGen, invokevirtual);
 		    System.out.println(String.format(this.format, "M",
@@ -143,10 +157,12 @@ public class MethodVisitor extends EmptyVisitor {
 		System.out.println(String.format(this.format, "I",
 			invokeinterface.getReferenceType(this.constantPoolGen),
 			invokeinterface.getMethodName(this.constantPoolGen)));
+
 	    } else {
 		if (methodGenName.charAt(0) == '<') {
 		    this.opCodeDescription.getOneTimeUseOnly()
-			    .addInterfaceCall(this.visitedClass,
+			    .addInterfaceCall(this.entryDescription,
+				    description, this.visitedClass,
 				    this.methodGen, this.constantPoolGen,
 				    invokeinterface);
 		    System.out
@@ -161,7 +177,8 @@ public class MethodVisitor extends EmptyVisitor {
 		    this.opCodeDescription.getOtherMethodByNameAndType(
 			    this.methodGen.getName(),
 			    this.methodGen.getArgumentTypes())
-			    .addInterfaceCall(this.visitedClass,
+			    .addInterfaceCall(this.entryDescription,
+				    description, this.visitedClass,
 				    this.methodGen, this.constantPoolGen,
 				    invokeinterface);
 		    System.out
@@ -177,21 +194,89 @@ public class MethodVisitor extends EmptyVisitor {
 	}
     }
 
+    // pass src, det, method, invoke type, look into once or method depending on
+    // method
+    private void write(Description who, Description whom,
+	    INVOKEMehtodProperties method, INVOKEType type) {
+	String methodName = method.getMethodName();
+	Type[] methoTypes = method.getTypes();
+	Description methodsDescription = method.getDescription();
+	System.out.println("\t" + who + "\n\t\t" + whom + "\n\t\t\t"
+		+ methodName);
+	OPCodeProperties list = null;
+
+	if (type == INVOKEType.SPECIAL) {
+	    if (method.getMethodName().charAt(0) == '<') {
+		whom.addClassToCalledByTestClasses(who.getActualClass());
+		list = whom.getOPCodeDescription().getOneTimeUseOnly();
+	    } else {
+		write(whom, methodsDescription, method, INVOKEType.VIRTUAL);
+	    }
+	} else if (type == INVOKEType.VIRTUAL) {
+	    System.out.println("VIRTUAL");
+	    list = whom.getOPCodeDescription().getOtherMethodByNameAndType(
+		    methodName, methoTypes);
+	} else if (type == INVOKEType.STATIC) {
+	    System.out.println("STATIC");
+	    list = whom.getOPCodeDescription().getOtherMethodByNameAndType(
+		    methodName, methoTypes);
+	} else if (type == INVOKEType.INTERFACE) {
+	    System.out.println("INTERFACE");
+	    list = whom.getOPCodeDescription().getOtherMethodByNameAndType(
+		    methodName, methoTypes);
+	}
+
+	for (INVOKEProperties object : list.getObjectCall()) {
+	    write(object.getMethodCallingFrom().getDescription(), object
+		    .getMethodCallTo().getDescription(),
+		    object.getMethodCallTo(), INVOKEType.SPECIAL);
+	}
+
+	for (INVOKEProperties object : list.getMethodCall()) {
+	    write(object.getMethodCallingFrom().getDescription(), object
+		    .getMethodCallTo().getDescription(),
+		    object.getMethodCallTo(), INVOKEType.VIRTUAL);
+	}
+
+	for (INVOKEProperties object : list.getStaticCall()) {
+	    write(object.getMethodCallingFrom().getDescription(), object
+		    .getMethodCallTo().getDescription(),
+		    object.getMethodCallTo(), INVOKEType.STATIC);
+	}
+
+	for (INVOKEProperties object : list.getInterfaceCall()) {
+	    write(object.getMethodCallingFrom().getDescription(), object
+		    .getMethodCallTo().getDescription(),
+		    object.getMethodCallTo(), INVOKEType.INTERFACE);
+	}
+
+	System.out.println("DONE!");
+    }
+
     @Override
     public void visitINVOKESPECIAL(INVOKESPECIAL invokespecial) {
 	String methodGenName = this.methodGen.getName();
 	String referenceType = invokespecial.getReferenceType(
 		this.constantPoolGen).toString();
+	String methodName = invokespecial.getMethodName(this.constantPoolGen)
+		.toString();
+	Type[] types = invokespecial.getArgumentTypes(constantPoolGen);
 	Description description = MainClass
 		.getDescriptionByActualClassName(referenceType);
+	INVOKEMehtodProperties methodCall = null;
 	if (description != null) {
 	    if (this.isGeneratedCode) {
 		System.out.println(String.format(this.format, "O",
 			invokespecial.getReferenceType(this.constantPoolGen),
 			invokespecial.getMethodName(this.constantPoolGen)));
+		methodCall = new INVOKEMehtodProperties(description,
+			methodName, types);
+		write(this.entryDescription, description, methodCall,
+			INVOKEType.SPECIAL);
 	    } else {
 		if (methodGenName.charAt(0) == '<') {
 		    this.opCodeDescription.getOneTimeUseOnly().addObjectCall(
+			    this.entryDescription, description,
 			    this.visitedClass, this.methodGen,
 			    this.constantPoolGen, invokespecial);
 		    System.out.println(String.format(this.format, "O",
@@ -202,6 +287,7 @@ public class MethodVisitor extends EmptyVisitor {
 		    this.opCodeDescription.getOtherMethodByNameAndType(
 			    this.methodGen.getName(),
 			    this.methodGen.getArgumentTypes()).addObjectCall(
+			    this.entryDescription, description,
 			    this.visitedClass, this.methodGen,
 			    this.constantPoolGen, invokespecial);
 		    System.out.println(String.format(this.format, "O",
@@ -228,6 +314,7 @@ public class MethodVisitor extends EmptyVisitor {
 	    } else {
 		if (methodGenName.charAt(0) == '<') {
 		    this.opCodeDescription.getOneTimeUseOnly().addStaticCall(
+			    this.entryDescription, description,
 			    this.visitedClass, this.methodGen,
 			    this.constantPoolGen, invokestatic);
 		    System.out
@@ -242,6 +329,7 @@ public class MethodVisitor extends EmptyVisitor {
 		    this.opCodeDescription.getOtherMethodByNameAndType(
 			    this.methodGen.getName(),
 			    this.methodGen.getArgumentTypes()).addStaticCall(
+			    this.entryDescription, description,
 			    this.visitedClass, this.methodGen,
 			    this.constantPoolGen, invokestatic);
 		    System.out
@@ -256,4 +344,19 @@ public class MethodVisitor extends EmptyVisitor {
 	    }
 	}
     }
+
+    public enum INVOKEType {
+	VIRTUAL("Method"), STATIC("Static"), INTERFACE("Interface"), SPECIAL(
+		"Object");
+	private String category;
+
+	private INVOKEType(String category) {
+	    this.category = category;
+	}
+
+	public String toString() {
+	    return this.category;
+	}
+    }
+
 }
