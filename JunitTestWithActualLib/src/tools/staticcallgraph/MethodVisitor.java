@@ -317,17 +317,28 @@ public class MethodVisitor extends EmptyVisitor {
 		list = whom.getOPCodeDescription().getOneTimeUseOnly();
 	    } else {
 		write(whom, methodsDescription, method, INVOKEType.VIRTUAL);
+		// nothing to do so return
+		return;
 	    }
 	} else if (type == INVOKEType.VIRTUAL) {
 	    System.out.println("!VIRTUAL!");
+	    SimpleObject simpleObject = methodsDescription
+		    .getSimpleObjectByNameAndTypeArgs(methodName, methoTypes);
+	    // add class name to this method, so that user can know who called
+	    // this method
+	    if (simpleObject != null) {
+		simpleObject.addClassForMethod(who.getActualClass());
+	    }
 	    list = whom.getOPCodeDescription().getOtherMethodByNameAndType(
 		    methodName, methoTypes);
 	} else if (type == INVOKEType.STATIC) {
 	    System.out.println("!STATIC!");
+	    whom.addClassToCalledByTestClasses(who.getActualClass());
 	    list = whom.getOPCodeDescription().getOtherMethodByNameAndType(
 		    methodName, methoTypes);
 	} else if (type == INVOKEType.INTERFACE) {
 	    System.out.println("!INTERFACE!");
+	    whom.addClassToCalledByTestClasses(who.getActualClass());
 	    list = whom.getOPCodeDescription().getOtherMethodByNameAndType(
 		    methodName, methoTypes);
 	}

@@ -469,7 +469,8 @@ public class Description {
 	}
 	sb.append("\n");
 
-	return this.getActualClass().getName();// sb.toString();
+	// return this.getActualClass().getName();// sb.toString();
+	return sb.toString();
     }
 
     /**
@@ -491,47 +492,5 @@ public class Description {
      */
     public JavaClass getJavaClass() {
 	return javaClass;
-    }
-
-    // public Field getFieldByName(String name) {
-    // for (Entry<String, SimpleObject> entry : this.getFields().entrySet()) {
-    // if (name.equalsIgnoreCase(entry.getKey())) {
-    // return (Field) entry.getValue().getObject();
-    // }
-    // }
-    // return null;
-    // }
-
-    // // public Field getMethodByName(String name) {
-    // // for (Entry<String, SimpleObject> entry : this.getMethods().entrySet())
-    // {
-    // // if (name.equalsIgnoreCase(entry.getKey())) {
-    // // return (Field) entry.getValue().getObject();
-    // // }
-    // // }
-    // // return null;
-    // // }
-    //
-    // public boolean equals(Object description) {
-    // if (description instanceof Description) {
-    // return this.getActualClass().equals(
-    // ((Description) description).getActualClass());
-    // } else {
-    // return false;
-    // }
-    // }
-    //
-    class SimpleObject {
-	private List<Class<?>> objects = new ArrayList<Class<?>>();
-
-	public void addClassForMethod(Class<?> clss) {
-	    if (!this.objects.contains(clss)) {
-		this.objects.add(clss);
-	    }
-	}
-
-	public List<Class<?>> getClasses() {
-	    return this.objects;
-	}
     }
 }
