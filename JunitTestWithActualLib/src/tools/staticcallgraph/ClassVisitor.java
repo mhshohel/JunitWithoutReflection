@@ -19,8 +19,6 @@
  */
 package tools.staticcallgraph;
 
-import java.util.List;
-
 import org.apache.bcel.classfile.EmptyVisitor;
 import org.apache.bcel.classfile.JavaClass;
 import org.apache.bcel.classfile.Method;
@@ -28,37 +26,38 @@ import org.apache.bcel.generic.ConstantPoolGen;
 import org.apache.bcel.generic.MethodGen;
 
 public class ClassVisitor extends EmptyVisitor {
-    private OPCodeDescription opCodeDescription = null;
-    private Description entryDescription = null;
-    private List<Description> classDescriptions = null;
-    private Class<?> clss = null;
-    private JavaClass javaClass = null;
     private ConstantPoolGen constants = null;
+    private Description entryDescription = null;
     private boolean isGeneratedCode = false;
+    private JavaClass javaClass = null;
+    private OPCodeDescription opCodeDescription = null;
+
+    public ClassVisitor(JavaClass jc, Description description,
+	    boolean isGeneratedCode) {
+	initialize(jc, description);
+	this.constants = new ConstantPoolGen(this.javaClass.getConstantPool());
+	this.isGeneratedCode = isGeneratedCode;
+    }
 
     public ClassVisitor(OPCodeDescription opCodeDescription,
-	    Description description, Class<?> clss, JavaClass jc) {
+	    Description description, JavaClass jc) {
+	initialize(jc, description);
 	this.opCodeDescription = opCodeDescription;
-	this.entryDescription = description;
-	this.clss = clss;
-	this.javaClass = jc;
 	this.constants = new ConstantPoolGen(this.javaClass.getConstantPool());
     }
 
-    public ClassVisitor(Class<?> clss, JavaClass jc, Description description,
-	    List<Description> classDescriptions, boolean isGeneratedCode) {
+    private void initialize(JavaClass jc, Description description) {
 	this.entryDescription = description;
-	this.classDescriptions = classDescriptions;
-	this.clss = clss;
 	this.javaClass = jc;
-	this.constants = new ConstantPoolGen(this.javaClass.getConstantPool());
-	this.isGeneratedCode = isGeneratedCode;
+    }
+
+    public void start() {
+	visitJavaClass(this.javaClass);
     }
 
     public void visitJavaClass(JavaClass jc) {
 	Method[] methods = jc.getMethods();
 	for (int i = 0; i < methods.length; i++) {
-	    // if (name.charAt(0) != '<')
 	    methods[i].accept(this);
 	}
     }
@@ -69,16 +68,12 @@ public class ClassVisitor extends EmptyVisitor {
 		this.javaClass.getClassName(), this.constants);
 	MethodVisitor visitor = null;
 	if (this.isGeneratedCode) {
-	    visitor = new MethodVisitor(this.clss, this.javaClass,
-		    this.entryDescription, this.classDescriptions, methodGen);
+	    visitor = new MethodVisitor(this.javaClass, this.entryDescription,
+		    methodGen);
 	} else {
 	    visitor = new MethodVisitor(this.opCodeDescription,
-		    this.entryDescription, this.clss, this.javaClass, methodGen);
+		    this.entryDescription, this.javaClass, methodGen);
 	}
 	visitor.start();
-    }
-
-    public void start() {
-	visitJavaClass(this.javaClass);
     }
 }

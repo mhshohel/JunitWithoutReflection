@@ -19,8 +19,6 @@
  */
 package tools.staticcallgraph;
 
-import java.util.List;
-
 import org.apache.bcel.classfile.JavaClass;
 import org.apache.bcel.generic.ConstantPoolGen;
 import org.apache.bcel.generic.ConstantPushInstruction;
@@ -39,40 +37,49 @@ import org.apache.bcel.generic.Type;
 import tools.code.gen.MainClass;
 
 public class MethodVisitor extends EmptyVisitor {
-    private OPCodeDescription opCodeDescription = null;
-    private Description entryDescription = null;
-    private List<Description> classDescriptions = null;
-    private Class<?> clss = null;
-    private JavaClass visitedClass = null;
-    private MethodGen methodGen = null;
-    private ConstantPoolGen constantPoolGen = null;
-    private String format = null;
-    private boolean isGeneratedCode = false;
+    public enum INVOKEType {
+	INTERFACE("Interface"), SPECIAL("Object"), STATIC("Static"), VIRTUAL(
+		"Method");
+	private String category;
 
-    public MethodVisitor(OPCodeDescription opCodeDescription,
-	    Description description, Class<?> clss, JavaClass jc,
-	    MethodGen methodGen) {
-	this.opCodeDescription = opCodeDescription;
-	this.entryDescription = description;
-	this.clss = clss;
-	this.visitedClass = jc;
-	this.methodGen = methodGen;
-	this.constantPoolGen = methodGen.getConstantPool();
-	this.isGeneratedCode = false;
-	this.format = "M:" + this.visitedClass.getClassName() + ":"
-		+ this.methodGen.getName() + " " + "(%s)%s:%s";
+	private INVOKEType(String category) {
+	    this.category = category;
+	}
+
+	public String toString() {
+	    return this.category;
+	}
     }
 
-    public MethodVisitor(Class<?> clss, JavaClass jc, Description description,
-	    List<Description> classDescriptions, MethodGen methodGen) {
-	this.classDescriptions = classDescriptions;
+    private ConstantPoolGen constantPoolGen = null;
+    private Description entryDescription = null;
+    private String format = null;
+    private boolean isGeneratedCode = false;
+    private MethodGen methodGen = null;
+    private OPCodeDescription opCodeDescription = null;
+
+    private JavaClass visitedClass = null;
+
+    public MethodVisitor(JavaClass jc, Description description,
+	    MethodGen methodGen) {
+	this.isGeneratedCode = true;
+	initialize(description, jc, methodGen);
+    }
+
+    public MethodVisitor(OPCodeDescription opCodeDescription,
+	    Description description, JavaClass jc, MethodGen methodGen) {
+	initialize(description, jc, methodGen);
+	this.opCodeDescription = opCodeDescription;
+	this.isGeneratedCode = false;
+    }
+
+    private void initialize(Description description, JavaClass jc,
+	    MethodGen methodGen) {
 	this.entryDescription = description;
-	this.clss = clss;
 	this.visitedClass = jc;
 	this.methodGen = methodGen;
 	this.constantPoolGen = methodGen.getConstantPool();
-	this.isGeneratedCode = true;
-	this.format = "M:" + this.visitedClass.getClassName() + ":"
+	this.format = "METHOD:" + this.visitedClass.getClassName() + ":"
 		+ this.methodGen.getName() + " " + "(%s)%s:%s";
     }
 
@@ -98,52 +105,6 @@ public class MethodVisitor extends EmptyVisitor {
     }
 
     @Override
-    public void visitINVOKEVIRTUAL(INVOKEVIRTUAL invokevirtual) {
-	String methodGenName = this.methodGen.getName();
-	String referenceType = invokevirtual.getReferenceType(
-		this.constantPoolGen).toString();
-	String methodName = invokevirtual.getMethodName(this.constantPoolGen)
-		.toString();
-	Type[] types = invokevirtual.getArgumentTypes(constantPoolGen);
-	Description description = MainClass
-		.getDescriptionByActualClassName(referenceType);
-	INVOKEMehtodProperties methodCall = null;
-	if (description != null) {
-	    if (this.isGeneratedCode) {
-		System.out.println(String.format(this.format, "M",
-			invokevirtual.getReferenceType(this.constantPoolGen),
-			invokevirtual.getMethodName(this.constantPoolGen)));
-		methodCall = new INVOKEMehtodProperties(description,
-			methodName, types);
-		write(this.entryDescription, description, methodCall,
-			INVOKEType.VIRTUAL);
-	    } else {
-		if (methodGenName.charAt(0) == '<') {
-		    this.opCodeDescription.getOneTimeUseOnly().addtMethodCall(
-			    this.entryDescription, description,
-			    this.visitedClass, this.methodGen,
-			    this.constantPoolGen, invokevirtual);
-		    System.out.println(String.format(this.format, "M",
-			    invokevirtual
-				    .getReferenceType(this.constantPoolGen),
-			    invokevirtual.getMethodName(this.constantPoolGen)));
-		} else {
-		    this.opCodeDescription.getOtherMethodByNameAndType(
-			    this.methodGen.getName(),
-			    this.methodGen.getArgumentTypes()).addtMethodCall(
-			    this.entryDescription, description,
-			    this.visitedClass, this.methodGen,
-			    this.constantPoolGen, invokevirtual);
-		    System.out.println(String.format(this.format, "M",
-			    invokevirtual
-				    .getReferenceType(this.constantPoolGen),
-			    invokevirtual.getMethodName(this.constantPoolGen)));
-		}
-	    }
-	}
-    }
-
-    @Override
     public void visitINVOKEINTERFACE(INVOKEINTERFACE invokeinterface) {
 	String methodGenName = this.methodGen.getName();
 	String referenceType = invokeinterface.getReferenceType(
@@ -154,11 +115,13 @@ public class MethodVisitor extends EmptyVisitor {
 	Description description = MainClass
 		.getDescriptionByActualClassName(referenceType);
 	INVOKEMehtodProperties methodCall = null;
+	String log = String.format(this.format, "INTERFACE",
+		invokeinterface.getReferenceType(this.constantPoolGen),
+		invokeinterface.getMethodName(this.constantPoolGen));
+	MainClass.log.add(log);
 	if (description != null) {
 	    if (this.isGeneratedCode) {
-		System.out.println(String.format(this.format, "I",
-			invokeinterface.getReferenceType(this.constantPoolGen),
-			invokeinterface.getMethodName(this.constantPoolGen)));
+		System.out.println(log);
 		methodCall = new INVOKEMehtodProperties(description,
 			methodName, types);
 		write(this.entryDescription, description, methodCall,
@@ -170,14 +133,7 @@ public class MethodVisitor extends EmptyVisitor {
 				    description, this.visitedClass,
 				    this.methodGen, this.constantPoolGen,
 				    invokeinterface);
-		    System.out
-			    .println(String.format(
-				    this.format,
-				    "I",
-				    invokeinterface
-					    .getReferenceType(this.constantPoolGen),
-				    invokeinterface
-					    .getMethodName(this.constantPoolGen)));
+		    System.out.println(log);
 		} else {
 		    this.opCodeDescription.getOtherMethodByNameAndType(
 			    this.methodGen.getName(),
@@ -186,14 +142,7 @@ public class MethodVisitor extends EmptyVisitor {
 				    description, this.visitedClass,
 				    this.methodGen, this.constantPoolGen,
 				    invokeinterface);
-		    System.out
-			    .println(String.format(
-				    this.format,
-				    "I",
-				    invokeinterface
-					    .getReferenceType(this.constantPoolGen),
-				    invokeinterface
-					    .getMethodName(this.constantPoolGen)));
+		    System.out.println(log);
 		}
 	    }
 	}
@@ -210,11 +159,13 @@ public class MethodVisitor extends EmptyVisitor {
 	Description description = MainClass
 		.getDescriptionByActualClassName(referenceType);
 	INVOKEMehtodProperties methodCall = null;
+	String log = String.format(this.format, "OBJECT",
+		invokespecial.getReferenceType(this.constantPoolGen),
+		invokespecial.getMethodName(this.constantPoolGen));
+	MainClass.log.add(log);
 	if (description != null) {
 	    if (this.isGeneratedCode) {
-		System.out.println(String.format(this.format, "O",
-			invokespecial.getReferenceType(this.constantPoolGen),
-			invokespecial.getMethodName(this.constantPoolGen)));
+		System.out.println(log);
 		methodCall = new INVOKEMehtodProperties(description,
 			methodName, types);
 		write(this.entryDescription, description, methodCall,
@@ -225,10 +176,7 @@ public class MethodVisitor extends EmptyVisitor {
 			    this.entryDescription, description,
 			    this.visitedClass, this.methodGen,
 			    this.constantPoolGen, invokespecial);
-		    System.out.println(String.format(this.format, "O",
-			    invokespecial
-				    .getReferenceType(this.constantPoolGen),
-			    invokespecial.getMethodName(this.constantPoolGen)));
+		    System.out.println(log);
 		} else {
 		    this.opCodeDescription.getOtherMethodByNameAndType(
 			    this.methodGen.getName(),
@@ -236,10 +184,7 @@ public class MethodVisitor extends EmptyVisitor {
 			    this.entryDescription, description,
 			    this.visitedClass, this.methodGen,
 			    this.constantPoolGen, invokespecial);
-		    System.out.println(String.format(this.format, "O",
-			    invokespecial
-				    .getReferenceType(this.constantPoolGen),
-			    invokespecial.getMethodName(this.constantPoolGen)));
+		    System.out.println(log);
 		}
 	    }
 	}
@@ -256,11 +201,13 @@ public class MethodVisitor extends EmptyVisitor {
 	Description description = MainClass
 		.getDescriptionByActualClassName(referenceType);
 	INVOKEMehtodProperties methodCall = null;
+	String log = String.format(this.format, "STATIC",
+		invokestatic.getReferenceType(this.constantPoolGen),
+		invokestatic.getMethodName(this.constantPoolGen));
+	MainClass.log.add(log);
 	if (description != null) {
 	    if (this.isGeneratedCode) {
-		System.out.println(String.format(this.format, "S",
-			invokestatic.getReferenceType(this.constantPoolGen),
-			invokestatic.getMethodName(this.constantPoolGen)));
+		System.out.println(log);
 		methodCall = new INVOKEMehtodProperties(description,
 			methodName, types);
 		write(this.entryDescription, description, methodCall,
@@ -271,14 +218,7 @@ public class MethodVisitor extends EmptyVisitor {
 			    this.entryDescription, description,
 			    this.visitedClass, this.methodGen,
 			    this.constantPoolGen, invokestatic);
-		    System.out
-			    .println(String.format(
-				    this.format,
-				    "S",
-				    invokestatic
-					    .getReferenceType(this.constantPoolGen),
-				    invokestatic
-					    .getMethodName(this.constantPoolGen)));
+		    System.out.println(log);
 		} else {
 		    this.opCodeDescription.getOtherMethodByNameAndType(
 			    this.methodGen.getName(),
@@ -286,14 +226,49 @@ public class MethodVisitor extends EmptyVisitor {
 			    this.entryDescription, description,
 			    this.visitedClass, this.methodGen,
 			    this.constantPoolGen, invokestatic);
-		    System.out
-			    .println(String.format(
-				    this.format,
-				    "S",
-				    invokestatic
-					    .getReferenceType(this.constantPoolGen),
-				    invokestatic
-					    .getMethodName(this.constantPoolGen)));
+		    System.out.println(log);
+		}
+	    }
+	}
+    }
+
+    @Override
+    public void visitINVOKEVIRTUAL(INVOKEVIRTUAL invokevirtual) {
+	String methodGenName = this.methodGen.getName();
+	String referenceType = invokevirtual.getReferenceType(
+		this.constantPoolGen).toString();
+	String methodName = invokevirtual.getMethodName(this.constantPoolGen)
+		.toString();
+	Type[] types = invokevirtual.getArgumentTypes(constantPoolGen);
+	Description description = MainClass
+		.getDescriptionByActualClassName(referenceType);
+	INVOKEMehtodProperties methodCall = null;
+	String log = String.format(this.format, "METHOD",
+		invokevirtual.getReferenceType(this.constantPoolGen),
+		invokevirtual.getMethodName(this.constantPoolGen));
+	MainClass.log.add(log);
+	if (description != null) {
+	    if (this.isGeneratedCode) {
+		System.out.println(log);
+		methodCall = new INVOKEMehtodProperties(description,
+			methodName, types);
+		write(this.entryDescription, description, methodCall,
+			INVOKEType.VIRTUAL);
+	    } else {
+		if (methodGenName.charAt(0) == '<') {
+		    this.opCodeDescription.getOneTimeUseOnly().addtMethodCall(
+			    this.entryDescription, description,
+			    this.visitedClass, this.methodGen,
+			    this.constantPoolGen, invokevirtual);
+		    System.out.println(log);
+		} else {
+		    this.opCodeDescription.getOtherMethodByNameAndType(
+			    this.methodGen.getName(),
+			    this.methodGen.getArgumentTypes()).addtMethodCall(
+			    this.entryDescription, description,
+			    this.visitedClass, this.methodGen,
+			    this.constantPoolGen, invokevirtual);
+		    System.out.println(log);
 		}
 	    }
 	}
@@ -313,8 +288,15 @@ public class MethodVisitor extends EmptyVisitor {
 	if (type == INVOKEType.SPECIAL) {
 	    System.out.println("!SPECIAL!");
 	    if (method.getMethodName().charAt(0) == '<') {
-		whom.addClassToCalledByTestClasses(who.getActualClass());
-		list = whom.getOPCodeDescription().getOneTimeUseOnly();
+		// if a class creates its own object then escape that to
+		// avoid
+		// loop
+		if (who.getActualClass().equals(whom.getActualClass())) {
+		    return;
+		} else {
+		    whom.addClassToCalledByTestClasses(who.getActualClass());
+		    list = whom.getOPCodeDescription().getOneTimeUseOnly();
+		}
 	    } else {
 		write(whom, methodsDescription, method, INVOKEType.VIRTUAL);
 		// nothing to do so return
@@ -324,7 +306,8 @@ public class MethodVisitor extends EmptyVisitor {
 	    System.out.println("!VIRTUAL!");
 	    SimpleObject simpleObject = methodsDescription
 		    .getSimpleObjectByNameAndTypeArgs(methodName, methoTypes);
-	    // add class name to this method, so that user can know who called
+	    // add class name to this method, so that user can know who
+	    // called
 	    // this method
 	    if (simpleObject != null) {
 		simpleObject.addClassForMethod(who.getActualClass());
@@ -342,9 +325,6 @@ public class MethodVisitor extends EmptyVisitor {
 	    list = whom.getOPCodeDescription().getOtherMethodByNameAndType(
 		    methodName, methoTypes);
 	}
-
-	System.out.println("--------------" + list + "--------------");
-
 	// must check iterations
 	if (list != null) {
 	    for (INVOKEProperties object : list.getObjectCall()) {
@@ -371,22 +351,5 @@ public class MethodVisitor extends EmptyVisitor {
 			object.getMethodCallTo(), INVOKEType.INTERFACE);
 	    }
 	}
-
-	System.out.println("DONE!");
     }
-
-    public enum INVOKEType {
-	VIRTUAL("Method"), STATIC("Static"), INTERFACE("Interface"), SPECIAL(
-		"Object");
-	private String category;
-
-	private INVOKEType(String category) {
-	    this.category = category;
-	}
-
-	public String toString() {
-	    return this.category;
-	}
-    }
-
 }

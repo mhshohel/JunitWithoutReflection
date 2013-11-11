@@ -35,12 +35,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
+
+import junit.framework.TestCase;
 
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Result;
@@ -52,63 +53,88 @@ import tools.staticcallgraph.OPCodeDescription;
 
 public class MainClass {
     /*
-     * Character that separates components of a file path. This is "/" on UNIX
-     * and "\" on Windows.
-     */
-    private static String fileSeparator = System.getProperty("file.separator");
-    /*
-     * Store file info
-     */
-    private static File file = null;
-    /*
      * Keep All classes that can be retrieve from class file, it's not
      * containing any inner class
      */
     private static Set<Class<?>> allClasses = new HashSet<Class<?>>();
-    /*
-     * Keep the list of all test classes
-     */
-    private static Set<Class<?>> testClasses = new HashSet<Class<?>>();
-    /*
-     * Keep the list of all non test classes, should pass as parameter to
-     * Description so that inner class can be treat as non test class
-     */
-    private static Set<Class<?>> nonTestClasses = new HashSet<Class<?>>();
     /*
      * Keep all the description of a Class file or Java file to create a report
      * of the process
      */
     private static List<Description> classDescriptions = new ArrayList<Description>();
     /*
+     * Keep Objects those are needs to check for CallGraph
+     */
+    private static List<List<Description>> entryClassFiles = new ArrayList<List<Description>>();
+    /*
+     * Store file info
+     */
+    private static File file = null;
+    /*
+     * Character that separates components of a file path. This is "/" on UNIX
+     * and "\" on Windows.
+     */
+    private static String fileSeparator = System.getProperty("file.separator");
+    /*
+     * Keep the list of all non test classes, should pass as parameter to
+     * Description so that inner class can be treat as non test class
+     */
+    private static Set<Class<?>> nonTestClasses = new HashSet<Class<?>>();
+    /*
      * Keep list of all generated .java file and Object List as test class, Main
      * file name of GenCode and package name
      */
     private static HashMap<List<String>, List<Object>> outputClassesDirectory = new HashMap<List<String>, List<Object>>();
     /*
-     * Keep Objects those are needs to check for CallGraph
+     * Keep the list of all test classes
      */
-    private static List<List<Description>> entryClassFiles = new ArrayList<List<Description>>();
+    private static Set<Class<?>> testClasses = new HashSet<Class<?>>();
     /*
      * test classes list of Description to keep objects those are recently used,
      * so that searching can be faster than normal
      */
-    public static List<Description> testDescriptionList = new ArrayList<Description>();
+    private static List<Description> testDescriptionList = new ArrayList<Description>();
+    /* Keep log of all opcode */
+    public static List<String> log = new ArrayList<String>();
 
     public static void main(String[] args) {
-	// Description d = new Description(graphs.DirectedGraph.class,
-	// ClassCategory.REGULAR);
-
 	// This version can only take one directory location
+	if (args.length == 0) {
+	    try {
+		String location = "";
+		BufferedReader br = new BufferedReader(new InputStreamReader(
+			System.in));
+		while (location.trim().equals("")) {
+		    System.out
+			    .println("Please provide the folder name with path,\nnot the package name. "
+				    + "ex: C:\\Temp\\src\n");
+		    location = br.readLine();
+		}
+		System.out
+			.print("You can also provide a specific Test class name as second parameter."
+				+ "\nWarrning: To get risk free result you should leave this field blank. "
+				+ "\nex: a.b.Test (package name but without .class extension)\n");
+		String specificTestClass = br.readLine();
+		if (specificTestClass.trim().equals("")) {
+		    args = new String[1];
+		    args[0] = location.trim();
+		} else {
+		    args = new String[2];
+		    args[0] = location.trim();
+		    args[1] = specificTestClass.trim();
+		}
+		System.out.println(location + "   " + specificTestClass);
+	    } catch (Exception e) {
+		System.exit(-1);
+	    }
+	}
 	if (args.length == 0) {
 	    System.err
 		    .println("You must provide the folder name with path, not the package name. "
 			    + "ex: C:\\Temp\\src");
 	    System.err
 		    .println("You can also provide a specific Test class name as second parameter. "
-			    + "ex: C:\\Temp\\src a.b.Test (without .class extension)");
-	    System.err
-		    .println("You can also use this jar file as a library by calling MainClass.codeGen "
-			    + "by providing maximum 2 parameters using String array.");
+			    + "\nex: a.b.Test (package name but without .class extension)\n");
 	    System.exit(-1);
 	}
 	try {
@@ -142,72 +168,15 @@ public class MainClass {
 	    System.out.println("--------------------------------------------");
 	    System.out.println("****** Part Three: Call Graph: Static ******");
 	    System.out.println("--------------------------------------------");
-
-	    long start = System.nanoTime();
-
+	    // read op code of classes
 	    readOpCodeOfTestClasses();
-
-	    long end = System.nanoTime();
-	    System.out.println("\n\n\tElapsed Time: "
-		    + TimeUnit.NANOSECONDS.toNanos(start - end) + "ns\n\n");
-
+	    // each list contains list of generated code for specific TestClass
 	    for (List<Description> classObjects : entryClassFiles) {
 		lookupToGetStaticCallGraph(classObjects);
 	    }
+	    // generate reports in .csv format
+	    print(args[0]);
 	} catch (Exception e) {
-	    e.printStackTrace();
-	}
-
-	// Description d = classDescriptions.get(0);
-	print();
-
-	// Description d = new Description(graphs.test.TestAlgorithms.class,
-	// ClassCategory.REGULAR);
-	// System.out.println(d);
-	// new CallGraph(path)
-	// print(d);
-	// verifySourcodeForGenCode();
-	// String path = "";
-	// for (Entry<String, String> entry : sourceFiles.entrySet()) {
-	// path = entry.getKey().concat(entry.getValue());
-	// break;
-	// }
-
-	// DirectedGraphInterface dg = new
-	// CallGraph("C:\\temp\\a\\graphs\\test")
-	// .getCallGraph();
-	// int c = dg.edgeCount();
-	// Strign path = sourceFiles.get
-	// readTestClasses();
-	// readGeneratedTestCode();
-    }
-
-    private static List<OPCodeDescription> testClassOpCode = new ArrayList<OPCodeDescription>();
-
-    private static void readOpCodeOfTestClasses() {
-	// test classes from OPCode
-	for (Description description : testDescriptionList) {
-	    // for each test class
-	    OPCodeDescription opCodeDescription = new OPCodeDescription(
-		    description);
-	    JCallGraph.lookInsideClass(opCodeDescription, description,
-		    description.getActualClass(), description.getJavaClass());
-	    // if method not found means method is not implemented
-	    // testClassOpCode.add(opCodeDescription);
-	    description.addOPCodeDescription(opCodeDescription);
-	}
-	System.out.println();
-    }
-
-    public static void print() {
-	try {
-	    PrintWriter output = new PrintWriter("c:\\temp\\EX.csv");
-	    for (Description description : classDescriptions) {
-		output.print(description);
-	    }
-	    output.print("\n");
-	    output.close();
-	} catch (FileNotFoundException e) {
 	    e.printStackTrace();
 	}
     }
@@ -262,10 +231,24 @@ public class MainClass {
 		System.out
 			.println("-------------------------------------------");
 		// Verify JUnit Test class first, if there JUnit fails to
-		// run Test case then it will not generate the output
+		// run Test case then it will not generate the output, only
+		// JUnit 4.0-4.9 can be accepted
 		Result result = null;
+		Class<?> testCase = TestCase.class;
 		try {
-		    result = JUnitCore.runClasses(cls);
+		    Class<?> superclass = cls.getSuperclass();
+		    if (superclass.equals(testCase)) {
+			System.err
+				.println("Warning: "
+					+ cls.getName()
+					+ " is not JUnit 4.0 or later version. \n"
+					+ "It can generate wrong output code. Please change the code.\n"
+					+ "Removee Superclass TestCase and add annotations.\n"
+					+ "Code generation faild...");
+			System.exit(-1);
+		    } else {
+			result = JUnitCore.runClasses(cls);
+		    }
 		} catch (Exception e) {
 		    e.printStackTrace();
 		}
@@ -437,67 +420,6 @@ public class MainClass {
 	}
     }
 
-    /**
-     * <li><strong><i>readFiles</i></strong></li>
-     * 
-     * <pre>
-     * private static void readFiles(final File folder, final String pack)
-     * </pre>
-     * 
-     * <p>
-     * Save the list of .class files.
-     * </p>
-     * 
-     * @param folder
-     *            - entry point of the folder.
-     * @param nameFilter
-     *            - provide a specific class name.
-     * @param pack
-     *            - contains package names.
-     * 
-     * @author Shohel Shamim
-     */
-    private static void readFiles(final File folder, final String nameFilter,
-	    final String pack) {
-	try {
-	    String pac = (pack.trim().equalsIgnoreCase("") ? "" : pack
-		    .concat("."));
-	    for (final File fileEntry : folder.listFiles()) {
-		if (fileEntry.isDirectory()) {
-		    readFiles(fileEntry, nameFilter,
-			    pac.concat(fileEntry.getName()));
-		} else {
-		    if (fileEntry.getName().endsWith(".class")) {
-			try {
-			    URL url = file.toURI().toURL();
-			    URL[] urls = new URL[] { url };
-			    String cls = pac.concat(fileEntry.getName()
-				    .replaceAll(".class", ""));
-			    @SuppressWarnings("resource")
-			    Class<?> clas = new URLClassLoader(urls)
-				    .loadClass(cls);
-			    System.out.println("\t" + clas.getName());
-			    allClasses.add(clas);
-			    if (cls.equalsIgnoreCase(nameFilter)) {
-				testClasses.add(clas);
-			    }
-			} catch (Exception e) {
-			    e.printStackTrace();
-			}
-		    }
-
-		    // else if (fileEntry.getName().endsWith(".java")) {
-		    // genCodeAndTestClassSourceFiles.put(
-		    // fileEntry.getAbsolutePath(),
-		    // fileEntry.getName());
-		    // }
-		}
-	    }
-	} catch (Exception e) {
-	    e.printStackTrace();
-	}
-    }
-
     /* Compile Gen Code */
     private static void compileGeneratedCodeAndLoad(String directory,
 	    List<String> generatedJavaFile, String mainClassFileName,
@@ -613,25 +535,6 @@ public class MainClass {
 	}
     }
 
-    /*
-     * Sample code for 3rd part of the Thesis
-     */
-    public static void lookupToGetStaticCallGraph(List<Description> classObjects) {
-	if (!classObjects.isEmpty()) {
-	    for (Description entryDescription : classObjects) {
-		JCallGraph.lookInsideClass(entryDescription.getActualClass(),
-			entryDescription.getJavaClass(), entryDescription,
-			classDescriptions, true);
-	    }
-
-	    // Description d =
-	    // getDescriptionByActualClassName("graphs.test.TestAlgorithms");
-	    //
-	    // ClassVisitor visitor = new ClassVisitor(d.getJavaClass());
-	    // visitor.start();
-	}
-    }
-
     public static Description getDescriptionByActualClassName(String name) {
 	if (!testDescriptionList.isEmpty()) {
 	    for (Description description : classDescriptions) {
@@ -647,6 +550,105 @@ public class MainClass {
 	    }
 	}
 	return null;
+    }
+
+    /*
+     * Sample code for 3rd part of the Thesis
+     */
+    public static void lookupToGetStaticCallGraph(List<Description> classObjects) {
+	if (!classObjects.isEmpty()) {
+	    for (Description entryDescription : classObjects) {
+		JCallGraph.lookInsideClass(entryDescription.getJavaClass(),
+			entryDescription, true);
+	    }
+	}
+    }
+
+    public static void print(String location) {
+	try {
+	    PrintWriter output = new PrintWriter("c:\\temp\\EX.csv");
+	    for (Description description : classDescriptions) {
+		output.print(description);
+	    }
+	    output.print("\n");
+	    output.close();
+	} catch (FileNotFoundException e) {
+	    e.printStackTrace();
+	}
+    }
+
+    /**
+     * <li><strong><i>readFiles</i></strong></li>
+     * 
+     * <pre>
+     * private static void readFiles(final File folder, final String pack)
+     * </pre>
+     * 
+     * <p>
+     * Save the list of .class files.
+     * </p>
+     * 
+     * @param folder
+     *            - entry point of the folder.
+     * @param nameFilter
+     *            - provide a specific class name.
+     * @param pack
+     *            - contains package names.
+     * 
+     * @author Shohel Shamim
+     */
+    private static void readFiles(final File folder, final String nameFilter,
+	    final String pack) {
+	try {
+	    String pac = (pack.trim().equalsIgnoreCase("") ? "" : pack
+		    .concat("."));
+	    for (final File fileEntry : folder.listFiles()) {
+		if (fileEntry.isDirectory()) {
+		    readFiles(fileEntry, nameFilter,
+			    pac.concat(fileEntry.getName()));
+		} else {
+		    if (fileEntry.getName().endsWith(".class")) {
+			try {
+			    URL url = file.toURI().toURL();
+			    URL[] urls = new URL[] { url };
+			    String cls = pac.concat(fileEntry.getName()
+				    .replaceAll(".class", ""));
+			    @SuppressWarnings("resource")
+			    Class<?> clas = new URLClassLoader(urls)
+				    .loadClass(cls);
+			    System.out.println("\t" + clas.getName());
+			    allClasses.add(clas);
+			    if (cls.equalsIgnoreCase(nameFilter)) {
+				testClasses.add(clas);
+			    }
+			} catch (Exception e) {
+			    e.printStackTrace();
+			}
+		    }
+
+		    // else if (fileEntry.getName().endsWith(".java")) {
+		    // genCodeAndTestClassSourceFiles.put(
+		    // fileEntry.getAbsolutePath(),
+		    // fileEntry.getName());
+		    // }
+		}
+	    }
+	} catch (Exception e) {
+	    e.printStackTrace();
+	}
+    }
+
+    private static void readOpCodeOfTestClasses() {
+	// test classes from OPCode
+	for (Description description : testDescriptionList) {
+	    // for each test class
+	    OPCodeDescription opCodeDescription = new OPCodeDescription(
+		    description);
+	    JCallGraph.lookInsideClass(opCodeDescription, description,
+		    description.getJavaClass());
+	    description.addOPCodeDescription(opCodeDescription);
+	}
+	System.out.println();
     }
 }
 

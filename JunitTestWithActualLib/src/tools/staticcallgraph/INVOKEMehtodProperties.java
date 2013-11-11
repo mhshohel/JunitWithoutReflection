@@ -22,9 +22,9 @@ package tools.staticcallgraph;
 import org.apache.bcel.generic.Type;
 
 public class INVOKEMehtodProperties {
+    private Description description = null;
     private String methodName = null;
     private Type[] types = null;
-    private Description description = null;
 
     public INVOKEMehtodProperties(Description description, String methodName,
 	    Type[] types) {

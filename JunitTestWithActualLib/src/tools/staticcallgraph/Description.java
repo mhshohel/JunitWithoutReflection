@@ -51,71 +51,73 @@ import org.apache.bcel.generic.Type;
  * @author Shohel Shamim
  */
 public class Description {
-    /*
-     * Keep all class Description, actually it is an instance of actual
-     * classDescriptions of MainClass
+    /**
+     * <li><strong>ClassCategory</strong></li>
+     * 
+     * <pre>
+     * public enum ClassCategory
+     * </pre>
+     * <p>
+     * This class used to mark class category as Regular, Test and Generated
+     * Class.
+     * </p>
+     * <br/>
+     * 
+     * @author Shohel Shamim
      */
-    private List<Description> classDescriptions = null;
-    /* Keep inner class as non test class */
-    private Set<Class<?>> nonTestClasses = null;
-    /* Keep class name with physical location */
-    private String resourceName = "";
-    /* Keep class location as inputstream */
-    private InputStream classInputStream = null;
+    public enum ClassCategory {
+	GENERATED("Generated Code"), REGULAR("Regular Class"), TEST(
+		"Test Class");
+	private String category;
+
+	private ClassCategory(String category) {
+	    this.category = category;
+	}
+
+	public String toString() {
+	    return this.category;
+	}
+    }
+
+    /* What are the JUnit Test classes that used this class */
+    private List<Class<?>> calledByTestClasses = new ArrayList<Class<?>>();
     /* Keep Original Class */
     private Class<?> clas = null;
-    /* Keep Java Class */
-    private JavaClass javaClass = null;
-    /* Return type of class: abstract, final, enum, final, interface */
-    private String classType = "";
-    /* Keep class package name */
-    private String packageName = "";
     /*
      * classCategory: isIt a JUnit Test Class? Generated Code for a Test Class?
      * or Regular Class?
      */
     private ClassCategory classCategory = null;
     /*
+     * Keep all class Description, actually it is an instance of actual
+     * classDescriptions of MainClass
+     */
+    private List<Description> classDescriptions = null;
+    /* Keep class location as inputstream */
+    private InputStream classInputStream = null;
+    /* Return type of class: abstract, final, enum, final, interface */
+    private String classType = "";
+    /*
      * Keep list of inner classes. Key: Class Name, Value: counter (how many
      * times it used)
      */
     private Map<Class<?>, Integer> innerClasses = new HashMap<Class<?>, Integer>();
+    /* Keep Java Class */
+    private JavaClass javaClass = null;
     /*
      * list of Methods, Key: Method name, Value: counter (how many times it
      * used)
      */
-    private Map<Method, SimpleObject> methods = new HashMap<Method, SimpleObject>();;
-    /* What are the JUnit Test classes that used this class */
-    private List<Class<?>> calledByTestClasses = new ArrayList<Class<?>>();
+    private Map<Method, SimpleObject> methods = new HashMap<Method, SimpleObject>();
+    /* Keep inner class as non test class */
+    private Set<Class<?>> nonTestClasses = null;;
+    /* Keep class package name */
+    private String packageName = "";
+    /* Keep class name with physical location */
+    private String resourceName = "";;
+
     /* Keep opcode of test class */
-    private OPCodeDescription testClassOpCode = new OPCodeDescription(this);;
-
-    public Description(Description description) {
-	this.classDescriptions = description.classDescriptions;
-	this.nonTestClasses = description.nonTestClasses;
-	this.resourceName = description.resourceName;
-	this.classInputStream = description.classInputStream;
-	this.clas = description.clas;
-	this.javaClass = description.javaClass;
-	this.classType = description.classType;
-	this.packageName = description.packageName;
-	this.classCategory = description.classCategory;
-	this.innerClasses = description.innerClasses;
-	this.methods = description.methods;
-	this.calledByTestClasses = description.calledByTestClasses;
-    }
-
-    public Description copy() {
-	return new Description(this);
-    }
-
-    public void addOPCodeDescription(OPCodeDescription opCodeDescription) {
-	this.testClassOpCode = opCodeDescription;
-    }
-
-    public OPCodeDescription getOPCodeDescription() {
-	return this.testClassOpCode;
-    }
+    private OPCodeDescription testClassOpCode = new OPCodeDescription(this);
 
     /**
      * <li><strong><i>Description</i></strong></li>
@@ -185,8 +187,43 @@ public class Description {
 	}
     }
 
+    public Description(Description description) {
+	this.classDescriptions = description.classDescriptions;
+	this.nonTestClasses = description.nonTestClasses;
+	this.resourceName = description.resourceName;
+	this.classInputStream = description.classInputStream;
+	this.clas = description.clas;
+	this.javaClass = description.javaClass;
+	this.classType = description.classType;
+	this.packageName = description.packageName;
+	this.classCategory = description.classCategory;
+	this.innerClasses = description.innerClasses;
+	this.methods = description.methods;
+	this.calledByTestClasses = description.calledByTestClasses;
+    }
+
+    public void addClassToCalledByTestClasses(Class<?> clsss) {
+	this.calledByTestClasses.add(clsss);
+    }
+
+    public void addOPCodeDescription(OPCodeDescription opCodeDescription) {
+	this.testClassOpCode = opCodeDescription;
+    }
+
+    public Description copy() {
+	return new Description(this);
+    }
+
     public Class<?> getActualClass() {
 	return this.clas;
+    }
+
+    public ClassCategory getClassCategory() {
+	return this.classCategory;
+    }
+
+    public InputStream getClassInputStream() {
+	return classInputStream;
     }
 
     /**
@@ -227,44 +264,12 @@ public class Description {
 	return this.classType;
     }
 
-    /**
-     * <li><strong><i>getPackageName</i></strong></li>
-     * 
-     * <pre>
-     * public String getPackageName()
-     * </pre>
-     * 
-     * <p>
-     * Return package name.
-     * </p>
-     * 
-     * @return String - a String format package name.
-     * 
-     * @author Shohel Shamim
-     */
-    public String getPackageName() {
-	return this.packageName;
-    }
-
-    public ClassCategory getClassCategory() {
-	return this.classCategory;
-    }
-
     public Map<Class<?>, Integer> getInnerClasses() {
 	return this.innerClasses;
     }
 
-    public Map<Method, SimpleObject> getMethods() {
-	return this.methods;
-    }
-
-    public String getMethodFullName(Method method) {
-	return method.toString().substring(0,
-		(method.toString().indexOf(')') + 1));
-    }
-
-    public String getMethodName(Method method) {
-	return method.getName();
+    public JavaClass getJavaClass() {
+	return javaClass;
     }
 
     public Method getMethodByNameAndTypeArgs(String methodName,
@@ -286,8 +291,50 @@ public class Description {
 		return null;
 	    }
 	}
-
 	return null;
+    }
+
+    public String getMethodFullName(Method method) {
+	return method.toString().substring(0,
+		(method.toString().indexOf(')') + 1));
+    }
+
+    public String getMethodName(Method method) {
+	return method.getName();
+    }
+
+    public Map<Method, SimpleObject> getMethods() {
+	return this.methods;
+    }
+
+    public OPCodeDescription getOPCodeDescription() {
+	return this.testClassOpCode;
+    }
+
+    /**
+     * <li><strong><i>getPackageName</i></strong></li>
+     * 
+     * <pre>
+     * public String getPackageName()
+     * </pre>
+     * 
+     * <p>
+     * Return package name.
+     * </p>
+     * 
+     * @return String - a String format package name.
+     * 
+     * @author Shohel Shamim
+     */
+    public String getPackageName() {
+	return this.packageName;
+    }
+
+    /**
+     * @return the resourcename
+     */
+    public String getResourceName() {
+	return resourceName;
     }
 
     public SimpleObject getSimpleObjectByNameAndTypeArgs(String methodName,
@@ -313,54 +360,16 @@ public class Description {
 	return null;
     }
 
-    // /*-----------------------------------Exmine later
-    /**
-     * @param calledByTestClasses
-     *            the calledByTestClasses to set
-     */
-    public void addClassToCalledByTestClasses(Class<?> clsss) {
-	this.calledByTestClasses.add(clsss);
-    }
-
-    public boolean isTestClass() {
-	return (this.classCategory == ClassCategory.TEST);
+    public boolean isGeneratedCode() {
+	return (this.classCategory == ClassCategory.GENERATED);
     }
 
     public boolean isRegularClass() {
 	return (this.classCategory == ClassCategory.REGULAR);
     }
 
-    public boolean isGeneratedCode() {
-	return (this.classCategory == ClassCategory.GENERATED);
-    }
-
-    /*******************************************************/
-    /**
-     * <li><strong>ClassCategory</strong></li>
-     * 
-     * <pre>
-     * public enum ClassCategory
-     * </pre>
-     * <p>
-     * This class used to mark class category as Regular, Test and Generated
-     * Class.
-     * </p>
-     * <br/>
-     * 
-     * @author Shohel Shamim
-     */
-    public enum ClassCategory {
-	REGULAR("Regular Class"), TEST("Test Class"), GENERATED(
-		"Generated Code");
-	private String category;
-
-	private ClassCategory(String category) {
-	    this.category = category;
-	}
-
-	public String toString() {
-	    return this.category;
-	}
+    public boolean isTestClass() {
+	return (this.classCategory == ClassCategory.TEST);
     }
 
     /**
@@ -380,7 +389,6 @@ public class Description {
      */
     public String toString() {
 	int counter = 0;
-	String cName = this.getClassName();
 	int calledByTestClassSize = this.calledByTestClasses.size();
 	int innerClassSize = this.getInnerClasses().size();
 	int methodsSize = this.getMethods().size();
@@ -469,28 +477,7 @@ public class Description {
 	}
 	sb.append("\n");
 
-	// return this.getActualClass().getName();// sb.toString();
-	return sb.toString();
-    }
-
-    /**
-     * @return the resourcename
-     */
-    public String getResourceName() {
-	return resourceName;
-    }
-
-    /**
-     * @return the classInputStream
-     */
-    public InputStream getClassInputStream() {
-	return classInputStream;
-    }
-
-    /**
-     * @return the javaClas
-     */
-    public JavaClass getJavaClass() {
-	return javaClass;
+	return this.getActualClass().getName();// sb.toString();
+	// return sb.toString();
     }
 }

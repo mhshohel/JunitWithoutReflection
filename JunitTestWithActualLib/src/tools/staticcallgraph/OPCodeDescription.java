@@ -38,16 +38,8 @@ public class OPCodeDescription {
 	this.others = new ArrayList<OPCodeProperties>();
     }
 
-    // public Description getParentDescription() {
-    // return this.description;
-    // }
-
     public OPCodeProperties getOneTimeUseOnly() {
 	return this.oneTimeUseOnly;
-    }
-
-    public List<OPCodeProperties> getOtherMethodInvocations() {
-	return this.others;
     }
 
     public OPCodeProperties getOtherMethodByNameAndType(String name,
@@ -68,5 +60,9 @@ public class OPCodeDescription {
 	this.others.add(opCodeProperties);
 
 	return opCodeProperties;
+    }
+
+    public List<OPCodeProperties> getOtherMethodInvocations() {
+	return this.others;
     }
 }

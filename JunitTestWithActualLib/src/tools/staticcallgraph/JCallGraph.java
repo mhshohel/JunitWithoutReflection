@@ -19,23 +19,20 @@
  */
 package tools.staticcallgraph;
 
-import java.util.List;
-
 import org.apache.bcel.classfile.JavaClass;
 
 public class JCallGraph {
-    public static void lookInsideClass(Class<?> clss, JavaClass javaClass,
-	    Description entryDescription, List<Description> classDescriptions,
-	    boolean isGeneratedCode) {
-	ClassVisitor visitor = new ClassVisitor(clss, javaClass,
-		entryDescription, classDescriptions, true);
+    public static void lookInsideClass(JavaClass javaClass,
+	    Description entryDescription, boolean isGeneratedCode) {
+	ClassVisitor visitor = new ClassVisitor(javaClass, entryDescription,
+		true);
 	visitor.start();
     }
 
     public static void lookInsideClass(OPCodeDescription opCodeDescription,
-	    Description description, Class<?> clss, JavaClass javaClass) {
-	ClassVisitor visitor = new ClassVisitor(opCodeDescription, description,
-		clss, javaClass);
+	    Description entryDescription, JavaClass javaClass) {
+	ClassVisitor visitor = new ClassVisitor(opCodeDescription,
+		entryDescription, javaClass);
 	visitor.start();
     }
 }

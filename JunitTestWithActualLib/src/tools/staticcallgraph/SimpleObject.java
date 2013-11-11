@@ -26,9 +26,7 @@ public class SimpleObject {
     private List<Class<?>> classes = new ArrayList<Class<?>>();
 
     public void addClassForMethod(Class<?> clss) {
-	// if (!this.classes.contains(clss)) {
 	this.classes.add(clss);
-	// }
     }
 
     public List<Class<?>> getClasses() {
