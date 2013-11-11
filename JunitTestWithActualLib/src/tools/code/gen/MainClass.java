@@ -169,7 +169,10 @@ public class MainClass {
 	    System.out.println("****** Part Three: Call Graph: Static ******");
 	    System.out.println("--------------------------------------------");
 	    // read op code of classes
+	    System.out.println("Reading OPCODE of Test Classes.");
 	    readOpCodeOfTestClasses();
+	    System.out.println("Read Succesful!");
+	    System.out.println("--------------------------------------------");
 	    // each list contains list of generated code for specific TestClass
 	    for (List<Description> classObjects : entryClassFiles) {
 		lookupToGetStaticCallGraph(classObjects);
@@ -237,7 +240,7 @@ public class MainClass {
 		Class<?> testCase = TestCase.class;
 		try {
 		    Class<?> superclass = cls.getSuperclass();
-		    if (superclass.equals(testCase)) {
+		    if (superclass != null && superclass.equals(testCase)) {
 			System.err
 				.println("Warning: "
 					+ cls.getName()
@@ -625,12 +628,6 @@ public class MainClass {
 			    e.printStackTrace();
 			}
 		    }
-
-		    // else if (fileEntry.getName().endsWith(".java")) {
-		    // genCodeAndTestClassSourceFiles.put(
-		    // fileEntry.getAbsolutePath(),
-		    // fileEntry.getName());
-		    // }
 		}
 	    }
 	} catch (Exception e) {
@@ -641,14 +638,16 @@ public class MainClass {
     private static void readOpCodeOfTestClasses() {
 	// test classes from OPCode
 	for (Description description : testDescriptionList) {
+	    System.out.print("\t" + description.getActualClass().getName()
+		    + ": ");
 	    // for each test class
 	    OPCodeDescription opCodeDescription = new OPCodeDescription(
 		    description);
 	    JCallGraph.lookInsideClass(opCodeDescription, description,
 		    description.getJavaClass());
 	    description.addOPCodeDescription(opCodeDescription);
+	    System.out.print("Complete!\n");
 	}
-	System.out.println();
     }
 }
 

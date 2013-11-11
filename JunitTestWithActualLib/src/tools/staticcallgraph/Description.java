@@ -21,7 +21,6 @@ package tools.staticcallgraph;
 
 import java.io.InputStream;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -80,7 +79,7 @@ public class Description {
     }
 
     /* What are the JUnit Test classes that used this class */
-    private List<Class<?>> calledByTestClasses = new ArrayList<Class<?>>();
+    private Map<Class<?>, Integer> calledByTestClasses = new HashMap<Class<?>, Integer>();
     /* Keep Original Class */
     private Class<?> clas = null;
     /*
@@ -202,8 +201,12 @@ public class Description {
 	this.calledByTestClasses = description.calledByTestClasses;
     }
 
-    public void addClassToCalledByTestClasses(Class<?> clsss) {
-	this.calledByTestClasses.add(clsss);
+    public void addClassToCalledByTestClasses(Class<?> clss) {
+	Integer value = 0;
+	if (this.calledByTestClasses.containsKey(clss)) {
+	    value = this.calledByTestClasses.get(clss);
+	}
+	this.calledByTestClasses.put(clss, ++value);
     }
 
     public void addOPCodeDescription(OPCodeDescription opCodeDescription) {
@@ -262,6 +265,16 @@ public class Description {
      */
     public String getClassType() {
 	return this.classType;
+    }
+
+    // return total size of all classes called
+    private int getCountedSizeCalledByTestClasses() {
+	Object[] values = this.calledByTestClasses.values().toArray();
+	int size = 0;
+	for (Object value : values) {
+	    size += (Integer) value;
+	}
+	return size;
     }
 
     public Map<Class<?>, Integer> getInnerClasses() {
@@ -400,7 +413,7 @@ public class Description {
 	sb.append("Package," + "Class Name," + "Class Type,"
 		+ "Class Category," + "Called By Test Classes,"
 		+ "Inner Class Size," + "Inner Classes," + "Methods Size,"
-		+ "Methods Name\n");
+		+ "Methods Name," + " Method Called By," + "Is Test Class\n");
 	int i = 0;
 	for (Entry<Class<?>, Integer> entry : this.getInnerClasses().entrySet()) {
 	    innerClasses[i] = entry.getKey().getName() + "   count: ("
@@ -409,13 +422,16 @@ public class Description {
 	}
 	i = 0;
 	String[] classesCalledBy = new String[calledByTestClassSize];
-	for (Class<?> cls : calledByTestClasses) {
-	    classesCalledBy[i] = cls.getName();
+	for (Entry<Class<?>, Integer> entry : this.calledByTestClasses
+		.entrySet()) {
+	    classesCalledBy[i] = entry.getKey().getName() + "   count: ("
+		    + entry.getValue() + ")";
 	    i++;
 	}
 	i = 0;
 	String nameWithParam = null;
 	int index = 0;
+	Object[] methodsKey = null;
 	for (Entry<Method, SimpleObject> entry : this.getMethods().entrySet()) {
 	    nameWithParam = entry.getKey().toString();
 	    index = nameWithParam.indexOf('[');
@@ -424,15 +440,37 @@ public class Description {
 	    }
 	    nameWithParam = "\"" + nameWithParam + "\"";
 	    methods[i] = nameWithParam + "   count: ("
-		    + entry.getValue().getClasses().size() + ")";
+		    + entry.getValue().getCountedSizeOfEachMethodCall() + ")";
+	    methodsKey = entry.getValue().getClasses().toArray();
+	    for (int j = 0; j < methodsKey.length; j++) {
+		Class<?> cls = ((Class<?>) methodsKey[j]);
+		if (j == 0) {
+		    methods[i] = methods[i]
+			    + ","
+			    + cls.getName()
+			    + "   count: ("
+			    + entry.getValue()
+				    .getCountedSizeOfEachMethodCallByKey(cls)
+			    + ")" + ","
+			    + entry.getValue().isTestClassByKey(cls);
+		} else {
+		    methods[i] = methods[i]
+			    + "\n,,,,,,,,,"
+			    + cls.getName()
+			    + "   count: ("
+			    + entry.getValue()
+				    .getCountedSizeOfEachMethodCallByKey(cls)
+			    + ")" + ","
+			    + entry.getValue().isTestClassByKey(cls);
+		}
+	    }
 	    i++;
 	}
-
 	while (counter < maxCount) {
 	    if (counter == 0) {
 		sb.append(this.getPackageName() + ",");
 		sb.append(this.getClassName() + " count: ("
-			+ calledByTestClassSize + "),");
+			+ getCountedSizeCalledByTestClasses() + "),");
 		sb.append(this.getClassType() + ",");
 		sb.append(this.getClassCategory() + ",");
 		if (counter < calledByTestClassSize) {
@@ -477,7 +515,6 @@ public class Description {
 	}
 	sb.append("\n");
 
-	return this.getActualClass().getName();// sb.toString();
-	// return sb.toString();
+	return sb.toString();
     }
 }

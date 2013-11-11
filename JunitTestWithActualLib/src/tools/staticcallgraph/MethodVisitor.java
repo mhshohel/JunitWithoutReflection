@@ -57,7 +57,6 @@ public class MethodVisitor extends EmptyVisitor {
     private boolean isGeneratedCode = false;
     private MethodGen methodGen = null;
     private OPCodeDescription opCodeDescription = null;
-
     private JavaClass visitedClass = null;
 
     public MethodVisitor(JavaClass jc, Description description,
@@ -99,7 +98,6 @@ public class MethodVisitor extends EmptyVisitor {
 
     private boolean visitInstruction(Instruction i) {
 	short opcode = i.getOpcode();
-
 	return ((InstructionConstants.INSTRUCTIONS[opcode] != null)
 		&& !(i instanceof ConstantPushInstruction) && !(i instanceof ReturnInstruction));
     }
@@ -121,7 +119,7 @@ public class MethodVisitor extends EmptyVisitor {
 	MainClass.log.add(log);
 	if (description != null) {
 	    if (this.isGeneratedCode) {
-		System.out.println(log);
+		// System.out.println(log);
 		methodCall = new INVOKEMehtodProperties(description,
 			methodName, types);
 		write(this.entryDescription, description, methodCall,
@@ -133,7 +131,7 @@ public class MethodVisitor extends EmptyVisitor {
 				    description, this.visitedClass,
 				    this.methodGen, this.constantPoolGen,
 				    invokeinterface);
-		    System.out.println(log);
+		    // System.out.println(log);
 		} else {
 		    this.opCodeDescription.getOtherMethodByNameAndType(
 			    this.methodGen.getName(),
@@ -142,7 +140,7 @@ public class MethodVisitor extends EmptyVisitor {
 				    description, this.visitedClass,
 				    this.methodGen, this.constantPoolGen,
 				    invokeinterface);
-		    System.out.println(log);
+		    // System.out.println(log);
 		}
 	    }
 	}
@@ -165,7 +163,7 @@ public class MethodVisitor extends EmptyVisitor {
 	MainClass.log.add(log);
 	if (description != null) {
 	    if (this.isGeneratedCode) {
-		System.out.println(log);
+		// System.out.println(log);
 		methodCall = new INVOKEMehtodProperties(description,
 			methodName, types);
 		write(this.entryDescription, description, methodCall,
@@ -176,7 +174,7 @@ public class MethodVisitor extends EmptyVisitor {
 			    this.entryDescription, description,
 			    this.visitedClass, this.methodGen,
 			    this.constantPoolGen, invokespecial);
-		    System.out.println(log);
+		    // System.out.println(log);
 		} else {
 		    this.opCodeDescription.getOtherMethodByNameAndType(
 			    this.methodGen.getName(),
@@ -184,7 +182,7 @@ public class MethodVisitor extends EmptyVisitor {
 			    this.entryDescription, description,
 			    this.visitedClass, this.methodGen,
 			    this.constantPoolGen, invokespecial);
-		    System.out.println(log);
+		    // System.out.println(log);
 		}
 	    }
 	}
@@ -207,7 +205,7 @@ public class MethodVisitor extends EmptyVisitor {
 	MainClass.log.add(log);
 	if (description != null) {
 	    if (this.isGeneratedCode) {
-		System.out.println(log);
+		// System.out.println(log);
 		methodCall = new INVOKEMehtodProperties(description,
 			methodName, types);
 		write(this.entryDescription, description, methodCall,
@@ -218,7 +216,7 @@ public class MethodVisitor extends EmptyVisitor {
 			    this.entryDescription, description,
 			    this.visitedClass, this.methodGen,
 			    this.constantPoolGen, invokestatic);
-		    System.out.println(log);
+		    // System.out.println(log);
 		} else {
 		    this.opCodeDescription.getOtherMethodByNameAndType(
 			    this.methodGen.getName(),
@@ -226,7 +224,7 @@ public class MethodVisitor extends EmptyVisitor {
 			    this.entryDescription, description,
 			    this.visitedClass, this.methodGen,
 			    this.constantPoolGen, invokestatic);
-		    System.out.println(log);
+		    // System.out.println(log);
 		}
 	    }
 	}
@@ -249,7 +247,7 @@ public class MethodVisitor extends EmptyVisitor {
 	MainClass.log.add(log);
 	if (description != null) {
 	    if (this.isGeneratedCode) {
-		System.out.println(log);
+		// System.out.println(log);
 		methodCall = new INVOKEMehtodProperties(description,
 			methodName, types);
 		write(this.entryDescription, description, methodCall,
@@ -260,7 +258,7 @@ public class MethodVisitor extends EmptyVisitor {
 			    this.entryDescription, description,
 			    this.visitedClass, this.methodGen,
 			    this.constantPoolGen, invokevirtual);
-		    System.out.println(log);
+		    // System.out.println(log);
 		} else {
 		    this.opCodeDescription.getOtherMethodByNameAndType(
 			    this.methodGen.getName(),
@@ -268,7 +266,7 @@ public class MethodVisitor extends EmptyVisitor {
 			    this.entryDescription, description,
 			    this.visitedClass, this.methodGen,
 			    this.constantPoolGen, invokevirtual);
-		    System.out.println(log);
+		    // System.out.println(log);
 		}
 	    }
 	}
@@ -281,16 +279,17 @@ public class MethodVisitor extends EmptyVisitor {
 	String methodName = method.getMethodName();
 	Type[] methoTypes = method.getTypes();
 	Description methodsDescription = method.getDescription();
-	System.out.println("\t" + who + "\n\t\t" + whom + "\n\t\t\t"
-		+ methodName);
+	// System.out.println("\t" + who + "\n\t\t" + whom + "\n\t\t\t"
+	// + methodName);
 	OPCodeProperties list = null;
 
 	if (type == INVOKEType.SPECIAL) {
-	    System.out.println("!SPECIAL!");
+	    // System.out.println("!SPECIAL!");
 	    if (method.getMethodName().charAt(0) == '<') {
-		// if a class creates its own object then escape that to
-		// avoid
-		// loop
+		/*
+		 * if a class creates its own object then escape that to avoid
+		 * loop
+		 */
 		if (who.getActualClass().equals(whom.getActualClass())) {
 		    return;
 		} else {
@@ -303,24 +302,25 @@ public class MethodVisitor extends EmptyVisitor {
 		return;
 	    }
 	} else if (type == INVOKEType.VIRTUAL) {
-	    System.out.println("!VIRTUAL!");
+	    // System.out.println("!VIRTUAL!");
 	    SimpleObject simpleObject = methodsDescription
 		    .getSimpleObjectByNameAndTypeArgs(methodName, methoTypes);
-	    // add class name to this method, so that user can know who
-	    // called
-	    // this method
+	    /*
+	     * add class name to this method, so that user can know who called
+	     * this method
+	     */
 	    if (simpleObject != null) {
 		simpleObject.addClassForMethod(who.getActualClass());
 	    }
 	    list = whom.getOPCodeDescription().getOtherMethodByNameAndType(
 		    methodName, methoTypes);
 	} else if (type == INVOKEType.STATIC) {
-	    System.out.println("!STATIC!");
+	    // System.out.println("!STATIC!");
 	    whom.addClassToCalledByTestClasses(who.getActualClass());
 	    list = whom.getOPCodeDescription().getOtherMethodByNameAndType(
 		    methodName, methoTypes);
 	} else if (type == INVOKEType.INTERFACE) {
-	    System.out.println("!INTERFACE!");
+	    // System.out.println("!INTERFACE!");
 	    whom.addClassToCalledByTestClasses(who.getActualClass());
 	    list = whom.getOPCodeDescription().getOtherMethodByNameAndType(
 		    methodName, methoTypes);

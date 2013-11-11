@@ -5,22 +5,22 @@ node [ id 0
 	 graphics [ type "roundrectangle" fill "#FFFF88" ] ]
 node [ id 1
 	 label "1"
-	 graphics [ type "roundrectangle" fill "#000000" ] ]
+	 graphics [ type "roundrectangle" fill "#FBBFF0" ] ]
 node [ id 2
 	 label "2"
-	 graphics [ type "roundrectangle" fill "#CCDDFF" ] ]
+	 graphics [ type "roundrectangle" fill "#000000" ] ]
 node [ id 3
 	 label "3"
-	 graphics [ type "roundrectangle" fill "#000000" ] ]
+	 graphics [ type "roundrectangle" fill "#FBBFF0" ] ]
 node [ id 4
 	 label "4"
 	 graphics [ type "roundrectangle" fill "#FBBFF0" ] ]
 node [ id 5
 	 label "5"
-	 graphics [ type "roundrectangle" fill "#000000" ] ]
+	 graphics [ type "roundrectangle" fill "#FFFF88" ] ]
 node [ id 6
 	 label "6"
-	 graphics [ type "roundrectangle" fill "#FFFF88" ] ]
+	 graphics [ type "roundrectangle" fill "#000000" ] ]
 edge [
 	 source 0  target 1
 	 graphics [width 1 type "line" fill "#000000" arrow "last"] ]

@@ -19,17 +19,50 @@
  */
 package tools.staticcallgraph;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+
+import tools.code.gen.MainClass;
 
 public class SimpleObject {
-    private List<Class<?>> classes = new ArrayList<Class<?>>();
+    private Map<Class<?>, Integer> classes = new HashMap<Class<?>, Integer>();
 
     public void addClassForMethod(Class<?> clss) {
-	this.classes.add(clss);
+	Integer value = 0;
+	if (this.classes.containsKey(clss)) {
+	    value = this.classes.get(clss);
+	}
+	this.classes.put(clss, ++value);
     }
 
-    public List<Class<?>> getClasses() {
-	return this.classes;
+    public Set<Class<?>> getClasses() {
+	return this.classes.keySet();
+    }
+
+    public int getCountedSizeOfEachMethodCall() {
+	Object[] values = this.classes.values().toArray();
+	int size = 0;
+	for (Object value : values) {
+	    size += (Integer) value;
+	}
+	return size;
+    }
+
+    public int getCountedSizeOfEachMethodCallByKey(Class<?> key) {
+	return this.classes.get(key);
+    }
+
+    public String isTestClassByKey(Class<?> key) {
+	Description description = MainClass.getDescriptionByActualClassName(key
+		.getName());
+	if (description != null && description.isTestClass()) {
+	    return "Yes";
+	}
+	return "No";
+    }
+
+    public int size() {
+	return this.classes.size();
     }
 }
