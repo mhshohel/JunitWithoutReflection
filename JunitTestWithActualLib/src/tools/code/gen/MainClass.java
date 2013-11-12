@@ -137,6 +137,13 @@ public class MainClass {
 			    + "\nex: a.b.Test (package name but without .class extension)\n");
 	    System.exit(-1);
 	}
+	// remove first and last "" sign if any
+	if (args[0].substring(0).equalsIgnoreCase("\"")) {
+	    args[0] = args[0].substring(1, args[0].length());
+	}
+	if (args[0].substring(args[0].length() - 1).equalsIgnoreCase("\"")) {
+	    args[0] = args[0].substring(0, args[0].length() - 1);
+	}
 	try {
 	    System.out
 		    .println("----------------------------------------------");
@@ -165,20 +172,43 @@ public class MainClass {
 		System.out
 			.println("----------------------------------------------------------------------\n");
 	    }
-	    System.out.println("--------------------------------------------");
-	    System.out.println("****** Part Three: Call Graph: Static ******");
-	    System.out.println("--------------------------------------------");
+	    System.out
+		    .println("--------------------------------------------------");
+	    System.out
+		    .println("****** Part Three: Simple Static Call Graph ******");
+	    System.out
+		    .println("--------------------------------------------------");
 	    // read op code of classes
-	    System.out.println("Reading OPCODE of Test Classes.");
+	    System.out.println("Reading OPCODE of Test Classes");
 	    readOpCodeOfTestClasses();
 	    System.out.println("Read Succesful!");
-	    System.out.println("--------------------------------------------");
+	    System.out
+		    .println("--------------------------------------------------");
+	    System.out
+		    .println("Collecting Call Graph Data from Generated Code Classes");
 	    // each list contains list of generated code for specific TestClass
 	    for (List<Description> classObjects : entryClassFiles) {
 		lookupToGetStaticCallGraph(classObjects);
 	    }
 	    // generate reports in .csv format
-	    print(args[0]);
+	    System.out.println("Static Data Collection Complete!");
+	    System.out
+		    .println("--------------------------------------------------");
+	    System.out.println("Writing Report in .CSV file");
+	    System.out.print("Please Wait.");
+	    long start = System.currentTimeMillis();
+	    Runnable runnable = new Progress();
+	    Thread myThread = new Thread(runnable);
+	    myThread.start();
+	    print("Static_Report_", args[0], myThread);
+	    long end = System.currentTimeMillis();
+	    double res = (end - start) / 1000;
+	    System.out.println("\tElapsed Time: " + res + "s");
+	    System.out
+		    .println("--------------------------------------------------");
+	    System.out.println("****** All Task Completed. Thank You. ******");
+	    System.out
+		    .println("--------------------------------------------------");
 	} catch (Exception e) {
 	    e.printStackTrace();
 	}
@@ -357,12 +387,10 @@ public class MainClass {
 				    + clss.getName()
 				    + " ******\n------------------------------------------------------------");
 		    System.out.print("Please Wait");
-
 		    long start = System.currentTimeMillis();
 		    Runnable runnable = new Progress();
 		    Thread myThread = new Thread(runnable);
 		    myThread.start();
-
 		    // Output generation begins;
 		    GenerateOutput outputClass = new GenerateOutput(clss,
 			    packageName, outputClassName, methodShouldSort,
@@ -373,7 +401,6 @@ public class MainClass {
 		    // clss
 		    // .getPackage().getName(), outputClassName,
 		    // methodShouldSort, directory);
-
 		    generatedCodeFileList = outputClass.execute();
 		    if (outputClass.isWritingComplete()) {
 			System.out
@@ -391,7 +418,6 @@ public class MainClass {
 			// classDescriptions.add(genCodeDesc);
 		    }
 		    outputClass = null;
-
 		    myThread.interrupt();
 		    myThread = null;
 		    long end = System.currentTimeMillis();
@@ -563,20 +589,39 @@ public class MainClass {
 	    for (Description entryDescription : classObjects) {
 		JCallGraph.lookInsideClass(entryDescription.getJavaClass(),
 			entryDescription, true);
+		System.out.println("\t"
+			+ entryDescription.getActualClass().getName()
+			+ ": DONE!");
 	    }
 	}
     }
 
-    public static void print(String location) {
+    public static void print(String fileNamePref, String location,
+	    Thread myThread) {
 	try {
-	    PrintWriter output = new PrintWriter("c:\\temp\\EX.csv");
+	    String fileName = fileNamePref + (System.currentTimeMillis())
+		    + ".csv";
+	    String lastChar = location.trim().substring(location.length() - 1);
+	    if (!lastChar.equalsIgnoreCase(fileSeparator)) {
+		location += fileSeparator;
+	    }
+	    String file = location + fileName;
+	    PrintWriter output = new PrintWriter(file);
 	    for (Description description : classDescriptions) {
 		output.print(description);
 	    }
 	    output.print("\n");
 	    output.close();
+	    System.out.println("\n\tReport Writing Successfully Completed"
+		    + "\n\t-------------------------" + "\n\tFile Name: "
+		    + fileName + "\n\tLocation: " + location + "\n\tFile: "
+		    + file + "\n\tFile Size: "
+		    + (new File(file).length() / 1024) + "KB.");
 	} catch (FileNotFoundException e) {
 	    e.printStackTrace();
+	} finally {
+	    myThread.interrupt();
+	    myThread = null;
 	}
     }
 
@@ -646,7 +691,7 @@ public class MainClass {
 	    JCallGraph.lookInsideClass(opCodeDescription, description,
 		    description.getJavaClass());
 	    description.addOPCodeDescription(opCodeDescription);
-	    System.out.print("Complete!\n");
+	    System.out.print("DONE!\n");
 	}
     }
 }
