@@ -138,10 +138,10 @@ public class MainClass {
 	    System.exit(-1);
 	}
 	// remove first and last "" sign if any
-	if (args[0].substring(0).equalsIgnoreCase("\"")) {
+	if (args[0].charAt(0) == '"') {
 	    args[0] = args[0].substring(1, args[0].length());
 	}
-	if (args[0].substring(args[0].length() - 1).equalsIgnoreCase("\"")) {
+	if (args[0].charAt(args[0].length() - 1) == '"') {
 	    args[0] = args[0].substring(0, args[0].length() - 1);
 	}
 	try {

@@ -201,6 +201,22 @@ public class Description {
 	this.calledByTestClasses = description.calledByTestClasses;
     }
 
+    /**
+     * <li><strong><i>addClassToCalledByTestClasses</i></strong></li>
+     * 
+     * <pre>
+     * public void addClassToCalledByTestClasses(Class<?> clss)
+     * </pre>
+     * 
+     * <p>
+     * Add class list that comes from opcode.
+     * </p>
+     * 
+     * @param Class
+     *            <?> class - provide class
+     * 
+     * @author Shohel Shamim
+     */
     public void addClassToCalledByTestClasses(Class<?> clss) {
 	Integer value = 0;
 	if (this.calledByTestClasses.containsKey(clss)) {

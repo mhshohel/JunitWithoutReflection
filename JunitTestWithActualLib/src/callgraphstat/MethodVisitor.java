@@ -20,6 +20,7 @@
 package callgraphstat;
 
 import org.apache.bcel.classfile.JavaClass;
+import org.apache.bcel.generic.ALOAD;
 import org.apache.bcel.generic.ConstantPoolGen;
 import org.apache.bcel.generic.ConstantPushInstruction;
 import org.apache.bcel.generic.EmptyVisitor;
@@ -32,6 +33,7 @@ import org.apache.bcel.generic.InstructionConstants;
 import org.apache.bcel.generic.InstructionHandle;
 import org.apache.bcel.generic.MethodGen;
 import org.apache.bcel.generic.ReturnInstruction;
+import org.apache.bcel.generic.Type;
 
 public class MethodVisitor extends EmptyVisitor {
     JavaClass visitedClass;
@@ -54,9 +56,26 @@ public class MethodVisitor extends EmptyVisitor {
 		.getNext()) {
 	    Instruction i = ih.getInstruction();
 
-	    if (!visitInstruction(i))
+	    ALOAD al = new ALOAD(19);
+
+	    // BranchInstruction
+	    // print(al);
+
+	    Object[] o = ih.getAttributes().toArray();
+	    Object oo = ih.getTargeters();
+	    String name = i.getName();
+	    int n = i.getOpcode();
+
+	    if (!visitInstruction(i)) {
 		i.accept(this);
+	    }
+	    String a = "";
+
 	}
+    }
+
+    void print(Object s) {
+	System.out.println("\t" + s);
     }
 
     private boolean visitInstruction(Instruction i) {
@@ -92,7 +111,16 @@ public class MethodVisitor extends EmptyVisitor {
 
     @Override
     public void visitINVOKESTATIC(INVOKESTATIC i) {
+	String methodGenName = mg.getName();
+	String referenceType = i.getReferenceType(cp).toString();
+	String methodName = i.getMethodName(cp).toString();
+	Type[] types = i.getArgumentTypes(cp);
+
 	System.out.println(String.format(format, "S", i.getReferenceType(cp),
 		i.getMethodName(cp)));
+	for (Type t : types) {
+	    System.out.println("\t" + t.toString());
+	}
+
     }
 }

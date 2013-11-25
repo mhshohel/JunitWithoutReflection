@@ -52,7 +52,7 @@ public class JCallGraph {
 		    if (!entry.getName().endsWith(".class"))
 			continue;
 
-		    Class<?> cls = WorldClass.class;
+		    Class<?> cls = JonasTestMain.class;
 
 		    String resourceName = cls.getName().replace('.', '/')
 			    + ".class";

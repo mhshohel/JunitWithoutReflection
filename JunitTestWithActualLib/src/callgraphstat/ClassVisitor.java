@@ -51,12 +51,12 @@ public class ClassVisitor extends EmptyVisitor {
 	try {
 	    JavaClass[] interfaces = jc.getAllInterfaces();
 	} catch (ClassNotFoundException e) {
-
 	    e.printStackTrace();
 	}
 	Method[] methods = jc.getMethods();
 	for (int i = 0; i < methods.length; i++) {
 	    String name = methods[i].getName();
+	    Method m = methods[i];
 	    // if (name.charAt(0) != '<')
 	    methods[i].accept(this);
 	}
