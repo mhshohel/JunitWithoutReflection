@@ -76,11 +76,6 @@ public class MainClass {
      */
     private static String fileSeparator = System.getProperty("file.separator");
     /*
-     * Keep the list of all non test classes, should pass as parameter to
-     * Description so that inner class can be treat as non test class
-     */
-    private static Set<Class<?>> nonTestClasses = new HashSet<Class<?>>();
-    /*
      * Keep list of all generated .java file and Object List as test class, Main
      * file name of GenCode and package name
      */
@@ -94,8 +89,6 @@ public class MainClass {
      * so that searching can be faster than normal
      */
     private static List<Description> testDescriptionList = new ArrayList<Description>();
-    /* Keep log of all opcode */
-    public static List<String> log = new ArrayList<String>();
 
     public static void main(String[] args) {
 	// This version can only take one directory location
@@ -180,7 +173,7 @@ public class MainClass {
 		    .println("--------------------------------------------------");
 	    // read op code of classes
 	    System.out.println("Reading OPCODE of Test Classes");
-	    readOpCodeOfTestClasses();
+	    readOpCodeOfClasses();
 	    System.out.println("Read Succesful!");
 	    System.out
 		    .println("--------------------------------------------------");
@@ -287,16 +280,13 @@ public class MainClass {
 		}
 
 		if (result != null && !result.getFailures().isEmpty()) {
-		    nonTestClasses.add(cls);
 		    classDescriptions.add(new Description(cls,
-			    ClassCategory.REGULAR, classDescriptions,
-			    nonTestClasses));
+			    ClassCategory.REGULAR, classDescriptions));
 		    System.out.println("\tis not a Test Class");
 		} else {
 		    testClasses.add(cls);
 		    Description description = new Description(cls,
-			    ClassCategory.TEST, classDescriptions,
-			    nonTestClasses);
+			    ClassCategory.TEST, classDescriptions);
 		    classDescriptions.add(description);
 		    testDescriptionList.add(description);
 		    System.out
@@ -338,92 +328,85 @@ public class MainClass {
 		// If looking for only one test class then other class record
 		// needs to describe, if specified a JUnit test class then it
 		// will mark other test class as normal class
-		if (nonTestClasses.isEmpty()) {
-		    for (Class<?> cls : allClasses) {
-			if (!testClasses.contains(cls)) {
-			    nonTestClasses.add(cls);
-			    classDescriptions.add(new Description(cls,
-				    ClassCategory.REGULAR, classDescriptions,
-				    nonTestClasses));
-			}
+		for (Class<?> cls : allClasses) {
+		    if (!testClasses.contains(cls)) {
+			classDescriptions.add(new Description(cls,
+				ClassCategory.REGULAR, classDescriptions));
 		    }
 		}
-		for (Class<?> clss : testClasses) {
-		    /*
-		     * Changed to class original name instead of hard coded
-		     * "OutputClass"
-		     */
-		    String outputClassName = clss.getSimpleName().concat(
-			    "Output");
-		    String packageName = clss.getPackage().getName();
+	    }
+	    for (Class<?> clss : testClasses) {
+		/*
+		 * Changed to class original name instead of hard coded
+		 * "OutputClass"
+		 */
+		String outputClassName = clss.getSimpleName().concat("Output");
+		String packageName = clss.getPackage().getName();
 
-		    // Physical Path; Decode path to avoid unwanted chars,
-		    // removed first char,
-		    String directory = URLDecoder.decode(clss.getResource("")
-			    .getFile().substring(1), "UTF-8");
-		    directory = fileLocation
-			    .concat(fileSeparator)
-			    .concat(packageName.replace('.', (fileSeparator
-				    .equalsIgnoreCase("/") ? '/' : '\\')))
-			    .concat(fileSeparator);
+		// Physical Path; Decode path to avoid unwanted chars,
+		// removed first char,
+		String directory = URLDecoder.decode(clss.getResource("")
+			.getFile().substring(1), "UTF-8");
+		directory = fileLocation
+			.concat(fileSeparator)
+			.concat(packageName.replace('.', (fileSeparator
+				.equalsIgnoreCase("/") ? '/' : '\\')))
+			.concat(fileSeparator);
 
-		    /*
-		     * If isMethodSorted is true then method will be sorted
-		     * otherwise it can be unsorted. In future Junit 4.11 there
-		     * is a updated to sort method. However, 4.1 - 4.10 it is
-		     * not available. If you run Junit then you may see method
-		     * is sometimes read according to alphabetical order but
-		     * most of the time unsorted. That's why for long list of
-		     * methods it is often creates confusion because order of
-		     * method not match, until you run 2-3 time you will get
-		     * sorted.
-		     */
-		    boolean methodShouldSort = isMethodSorted; // or false
+		/*
+		 * If isMethodSorted is true then method will be sorted
+		 * otherwise it can be unsorted. In future Junit 4.11 there is a
+		 * updated to sort method. However, 4.1 - 4.10 it is not
+		 * available. If you run Junit then you may see method is
+		 * sometimes read according to alphabetical order but most of
+		 * the time unsorted. That's why for long list of methods it is
+		 * often creates confusion because order of method not match,
+		 * until you run 2-3 time you will get sorted.
+		 */
+		boolean methodShouldSort = isMethodSorted; // or false
 
+		System.out
+			.println("\n------------------------------------------------------------");
+		System.out
+			.println("****** Generating Code for "
+				+ clss.getName()
+				+ " ******\n------------------------------------------------------------");
+		System.out.print("Please Wait");
+		long start = System.currentTimeMillis();
+		Runnable runnable = new Progress();
+		Thread myThread = new Thread(runnable);
+		myThread.start();
+		// Output generation begins;
+		GenerateOutput outputClass = new GenerateOutput(clss,
+			packageName, outputClassName, methodShouldSort,
+			directory);
+
+		// clss = BigOutPut.class;
+		// GenerateOutput outputClass = new GenerateOutput(clss,
+		// clss
+		// .getPackage().getName(), outputClassName,
+		// methodShouldSort, directory);
+		generatedCodeFileList = outputClass.execute();
+		if (outputClass.isWritingComplete()) {
 		    System.out
-			    .println("\n------------------------------------------------------------");
-		    System.out
-			    .println("****** Generating Code for "
-				    + clss.getName()
-				    + " ******\n------------------------------------------------------------");
-		    System.out.print("Please Wait");
-		    long start = System.currentTimeMillis();
-		    Runnable runnable = new Progress();
-		    Thread myThread = new Thread(runnable);
-		    myThread.start();
-		    // Output generation begins;
-		    GenerateOutput outputClass = new GenerateOutput(clss,
-			    packageName, outputClassName, methodShouldSort,
-			    directory);
-
-		    // clss = BigOutPut.class;
-		    // GenerateOutput outputClass = new GenerateOutput(clss,
-		    // clss
-		    // .getPackage().getName(), outputClassName,
-		    // methodShouldSort, directory);
-		    generatedCodeFileList = outputClass.execute();
-		    if (outputClass.isWritingComplete()) {
-			System.out
-				.println("\n\tCode Generation Completed. Main Class File is: "
-					+ outputClassName + ".java");
-			List<Object> objects = new ArrayList<Object>();
-			objects.add(clss);
-			objects.add(outputClassName);
-			objects.add(clss.getPackage().getName());
-			// Key is list of .java files and value is class
-			outputClassesDirectory.put(generatedCodeFileList,
-				objects);
-			// Description genCodeDesc = new Description(clss,
-			// false);
-			// classDescriptions.add(genCodeDesc);
-		    }
-		    outputClass = null;
-		    myThread.interrupt();
-		    myThread = null;
-		    long end = System.currentTimeMillis();
-		    double res = (end - start) / 1000;
-		    System.out.println("\tElapsed Time: " + res + "s");
+			    .println("\n\tCode Generation Completed. Main Class File is: "
+				    + outputClassName + ".java");
+		    List<Object> objects = new ArrayList<Object>();
+		    objects.add(clss);
+		    objects.add(outputClassName);
+		    objects.add(clss.getPackage().getName());
+		    // Key is list of .java files and value is class
+		    outputClassesDirectory.put(generatedCodeFileList, objects);
+		    // Description genCodeDesc = new Description(clss,
+		    // false);
+		    // classDescriptions.add(genCodeDesc);
 		}
+		outputClass = null;
+		myThread.interrupt();
+		myThread = null;
+		long end = System.currentTimeMillis();
+		double res = (end - start) / 1000;
+		System.out.println("\tElapsed Time: " + res + "s");
 	    }
 	} catch (Exception e) {
 	    System.err.println(e.getMessage());
@@ -540,7 +523,7 @@ public class MainClass {
 		    clss = Class.forName(name, true, classLoader);
 		    allClasses.add(clss);
 		    description = new Description(clss, ClassCategory.REGULAR,
-			    classDescriptions, nonTestClasses);
+			    classDescriptions);
 		    classDescriptions.add(description);
 		    // make sure that main class object is at the top position
 		    if (isMainClass) {
@@ -564,31 +547,15 @@ public class MainClass {
 	}
     }
 
-    public static Description getDescriptionByActualClassName(String name) {
-	if (!testDescriptionList.isEmpty()) {
-	    for (Description description : classDescriptions) {
-		if (description.getClassName().equals(name)) {
-		    return description;
-		}
-	    }
-	}
-	for (Description description : classDescriptions) {
-	    if (description.getClassName().equals(name)) {
-		testDescriptionList.add(description);
-		return description;
-	    }
-	}
-	return null;
-    }
-
     /*
      * Sample code for 3rd part of the Thesis
      */
     public static void lookupToGetStaticCallGraph(List<Description> classObjects) {
 	if (!classObjects.isEmpty()) {
 	    for (Description entryDescription : classObjects) {
-		JCallGraph.lookInsideClass(entryDescription.getJavaClass(),
-			entryDescription, true);
+		new JCallGraph(classDescriptions, testDescriptionList)
+			.lookInsideClass(entryDescription.getJavaClass(),
+				entryDescription, true);
 		System.out.println("\t"
 			+ entryDescription.getActualClass().getName()
 			+ ": DONE!");
@@ -680,7 +647,7 @@ public class MainClass {
 	}
     }
 
-    private static void readOpCodeOfTestClasses() {
+    private static void readOpCodeOfClasses() {
 	// test classes from OPCode
 	for (Description description : testDescriptionList) {
 	    System.out.print("\t" + description.getActualClass().getName()
@@ -688,8 +655,9 @@ public class MainClass {
 	    // for each test class
 	    OPCodeDescription opCodeDescription = new OPCodeDescription(
 		    description);
-	    JCallGraph.lookInsideClass(opCodeDescription, description,
-		    description.getJavaClass());
+	    new JCallGraph(classDescriptions, testDescriptionList)
+		    .lookInsideClass(opCodeDescription, description,
+			    description.getJavaClass());
 	    description.addOPCodeDescription(opCodeDescription);
 	    System.out.print("DONE!\n");
 	}

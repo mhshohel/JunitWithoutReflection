@@ -31,24 +31,28 @@ public class ClassVisitor extends EmptyVisitor {
     private boolean isGeneratedCode = false;
     private JavaClass javaClass = null;
     private OPCodeDescription opCodeDescription = null;
+    private JCallGraph jCallGraph = null;
 
-    public ClassVisitor(JavaClass jc, Description description,
-	    boolean isGeneratedCode) {
-	initialize(jc, description);
+    public ClassVisitor(JCallGraph jCallGraph, JavaClass jc,
+	    Description description, boolean isGeneratedCode) {
+	initialize(jCallGraph, jc, description);
 	this.constants = new ConstantPoolGen(this.javaClass.getConstantPool());
 	this.isGeneratedCode = isGeneratedCode;
     }
 
-    public ClassVisitor(OPCodeDescription opCodeDescription,
-	    Description description, JavaClass jc) {
-	initialize(jc, description);
+    public ClassVisitor(JCallGraph jCallGraph,
+	    OPCodeDescription opCodeDescription, Description description,
+	    JavaClass jc) {
+	initialize(jCallGraph, jc, description);
 	this.opCodeDescription = opCodeDescription;
 	this.constants = new ConstantPoolGen(this.javaClass.getConstantPool());
     }
 
-    private void initialize(JavaClass jc, Description description) {
+    private void initialize(JCallGraph jCallGraph, JavaClass jc,
+	    Description description) {
 	this.entryDescription = description;
 	this.javaClass = jc;
+	this.jCallGraph = jCallGraph;
     }
 
     public void start() {
@@ -68,11 +72,12 @@ public class ClassVisitor extends EmptyVisitor {
 		this.javaClass.getClassName(), this.constants);
 	MethodVisitor visitor = null;
 	if (this.isGeneratedCode) {
-	    visitor = new MethodVisitor(this.javaClass, this.entryDescription,
-		    methodGen);
+	    visitor = new MethodVisitor(this.jCallGraph, this.javaClass,
+		    this.entryDescription, methodGen);
 	} else {
-	    visitor = new MethodVisitor(this.opCodeDescription,
-		    this.entryDescription, this.javaClass, methodGen);
+	    visitor = new MethodVisitor(this.jCallGraph,
+		    this.opCodeDescription, this.entryDescription,
+		    this.javaClass, methodGen);
 	}
 	visitor.start();
     }

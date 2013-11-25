@@ -23,8 +23,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import tools.code.gen.MainClass;
-
 public class SimpleObject {
     private Map<Class<?>, Integer> classes = new HashMap<Class<?>, Integer>();
 
@@ -51,15 +49,6 @@ public class SimpleObject {
 
     public int getCountedSizeOfEachMethodCallByKey(Class<?> key) {
 	return this.classes.get(key);
-    }
-
-    public String isTestClassByKey(Class<?> key) {
-	Description description = MainClass.getDescriptionByActualClassName(key
-		.getName());
-	if (description != null && description.isTestClass()) {
-	    return "Yes";
-	}
-	return "No";
     }
 
     public int size() {

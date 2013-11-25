@@ -26,7 +26,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 
 import org.apache.bcel.classfile.ClassParser;
 import org.apache.bcel.classfile.JavaClass;
@@ -108,15 +107,13 @@ public class Description {
      * used)
      */
     private Map<Method, SimpleObject> methods = new HashMap<Method, SimpleObject>();
-    /* Keep inner class as non test class */
-    private Set<Class<?>> nonTestClasses = null;;
     /* Keep class package name */
     private String packageName = "";
     /* Keep class name with physical location */
     private String resourceName = "";;
 
-    /* Keep opcode of test class */
-    private OPCodeDescription testClassOpCode = new OPCodeDescription(this);
+    /* Keep opcode of class */
+    private OPCodeDescription myOpCode = new OPCodeDescription(this);
 
     /**
      * <li><strong><i>Description</i></strong></li>
@@ -139,10 +136,8 @@ public class Description {
      * @throws Exception
      */
     public Description(Class<?> clas, ClassCategory classCategory,
-	    List<Description> classDescriptions, Set<Class<?>> nonTestClasses)
-	    throws Exception {
+	    List<Description> classDescriptions) throws Exception {
 	this.classDescriptions = classDescriptions;
-	this.nonTestClasses = nonTestClasses;
 	this.clas = clas;
 	try {
 	    this.resourceName = clas.getName().replace('.', '/') + ".class";
@@ -170,10 +165,8 @@ public class Description {
 	}
 	// Inner Class as Application
 	for (Class<?> cls : this.clas.getDeclaredClasses()) {
-	    this.nonTestClasses.add(cls);
 	    this.classDescriptions.add(new Description(cls,
-		    ClassCategory.REGULAR, this.classDescriptions,
-		    this.nonTestClasses));
+		    ClassCategory.REGULAR, this.classDescriptions));
 	    this.innerClasses.put(cls, 0);
 	}
 	// Methods
@@ -188,7 +181,6 @@ public class Description {
 
     public Description(Description description) {
 	this.classDescriptions = description.classDescriptions;
-	this.nonTestClasses = description.nonTestClasses;
 	this.resourceName = description.resourceName;
 	this.classInputStream = description.classInputStream;
 	this.clas = description.clas;
@@ -226,7 +218,7 @@ public class Description {
     }
 
     public void addOPCodeDescription(OPCodeDescription opCodeDescription) {
-	this.testClassOpCode = opCodeDescription;
+	this.myOpCode = opCodeDescription;
     }
 
     public Description copy() {
@@ -337,7 +329,7 @@ public class Description {
     }
 
     public OPCodeDescription getOPCodeDescription() {
-	return this.testClassOpCode;
+	return this.myOpCode;
     }
 
     /**
@@ -417,120 +409,120 @@ public class Description {
      * @author Shohel Shamim
      */
     public String toString() {
-	int counter = 0;
-	int calledByTestClassSize = this.calledByTestClasses.size();
-	int innerClassSize = this.getInnerClasses().size();
-	int methodsSize = this.getMethods().size();
-	int maxCount = Math.max(Math.max(innerClassSize, methodsSize),
-		calledByTestClassSize);
-	String[] innerClasses = new String[innerClassSize];
-	String[] methods = new String[methodsSize];
-	StringBuffer sb = new StringBuffer();
-	sb.append("Package," + "Class Name," + "Class Type,"
-		+ "Class Category," + "Called By Test Classes,"
-		+ "Inner Class Size," + "Inner Classes," + "Methods Size,"
-		+ "Methods Name," + " Method Called By," + "Is Test Class\n");
-	int i = 0;
-	for (Entry<Class<?>, Integer> entry : this.getInnerClasses().entrySet()) {
-	    innerClasses[i] = entry.getKey().getName() + "   count: ("
-		    + entry.getValue() + ")";
-	    i++;
-	}
-	i = 0;
-	String[] classesCalledBy = new String[calledByTestClassSize];
-	for (Entry<Class<?>, Integer> entry : this.calledByTestClasses
-		.entrySet()) {
-	    classesCalledBy[i] = entry.getKey().getName() + "   count: ("
-		    + entry.getValue() + ")";
-	    i++;
-	}
-	i = 0;
-	String nameWithParam = null;
-	int index = 0;
-	Object[] methodsKey = null;
-	for (Entry<Method, SimpleObject> entry : this.getMethods().entrySet()) {
-	    nameWithParam = entry.getKey().toString();
-	    index = nameWithParam.indexOf('[');
-	    if (index > 0) {
-		nameWithParam = nameWithParam.substring(0, index).trim();
-	    }
-	    nameWithParam = "\"" + nameWithParam + "\"";
-	    methods[i] = nameWithParam + "   count: ("
-		    + entry.getValue().getCountedSizeOfEachMethodCall() + ")";
-	    methodsKey = entry.getValue().getClasses().toArray();
-	    for (int j = 0; j < methodsKey.length; j++) {
-		Class<?> cls = ((Class<?>) methodsKey[j]);
-		if (j == 0) {
-		    methods[i] = methods[i]
-			    + ","
-			    + cls.getName()
-			    + "   count: ("
-			    + entry.getValue()
-				    .getCountedSizeOfEachMethodCallByKey(cls)
-			    + ")" + ","
-			    + entry.getValue().isTestClassByKey(cls);
-		} else {
-		    methods[i] = methods[i]
-			    + "\n,,,,,,,,,"
-			    + cls.getName()
-			    + "   count: ("
-			    + entry.getValue()
-				    .getCountedSizeOfEachMethodCallByKey(cls)
-			    + ")" + ","
-			    + entry.getValue().isTestClassByKey(cls);
-		}
-	    }
-	    i++;
-	}
-	while (counter < maxCount) {
-	    if (counter == 0) {
-		sb.append(this.getPackageName() + ",");
-		sb.append(this.getClassName() + " count: ("
-			+ getCountedSizeCalledByTestClasses() + "),");
-		sb.append(this.getClassType() + ",");
-		sb.append(this.getClassCategory() + ",");
-		if (counter < calledByTestClassSize) {
-		    sb.append(classesCalledBy[counter] + ",");
-		} else {
-		    sb.append(",");
-		}
-		sb.append(innerClassSize + ",");
-		if (counter < innerClassSize) {
-		    sb.append(innerClasses[counter] + ",");
-		} else {
-		    sb.append(",");
-		}
-		sb.append(methodsSize + ",");
-		if (counter < methodsSize) {
-		    sb.append(methods[counter] + ",");
-		} else {
-		    sb.append(",");
-		}
-	    } else {
-		sb.append(",,,,");
-		if (counter < calledByTestClassSize) {
-		    sb.append(classesCalledBy[counter] + ",");
-		} else {
-		    sb.append(",");
-		}
-		sb.append(",");
-		if (counter < innerClassSize) {
-		    sb.append(innerClasses[counter] + ",");
-		} else {
-		    sb.append(",");
-		}
-		sb.append(",");
-		if (counter < methodsSize) {
-		    sb.append(methods[counter] + ",");
-		} else {
-		    sb.append(",");
-		}
-	    }
-	    sb.append("\n");
-	    counter++;
-	}
-	sb.append("\n");
+	// int counter = 0;
+	// int calledByTestClassSize = this.calledByTestClasses.size();
+	// int innerClassSize = this.getInnerClasses().size();
+	// int methodsSize = this.getMethods().size();
+	// int maxCount = Math.max(Math.max(innerClassSize, methodsSize),
+	// calledByTestClassSize);
+	// String[] innerClasses = new String[innerClassSize];
+	// String[] methods = new String[methodsSize];
+	// StringBuffer sb = new StringBuffer();
+	// sb.append("Package," + "Class Name," + "Class Type,"
+	// + "Class Category," + "Called By Test Classes,"
+	// + "Inner Class Size," + "Inner Classes," + "Methods Size,"
+	// + "Methods Name," + " Method Called By," + "Is Test Class\n");
+	// int i = 0;
+	// for (Entry<Class<?>, Integer> entry :
+	// this.getInnerClasses().entrySet()) {
+	// innerClasses[i] = entry.getKey().getName() + "   count: ("
+	// + entry.getValue() + ")";
+	// i++;
+	// }
+	// i = 0;
+	// String[] classesCalledBy = new String[calledByTestClassSize];
+	// for (Entry<Class<?>, Integer> entry : this.calledByTestClasses
+	// .entrySet()) {
+	// classesCalledBy[i] = entry.getKey().getName() + "   count: ("
+	// + entry.getValue() + ")";
+	// i++;
+	// }
+	// i = 0;
+	// String nameWithParam = null;
+	// int index = 0;
+	// Object[] methodsKey = null;
+	// for (Entry<Method, SimpleObject> entry :
+	// this.getMethods().entrySet()) {
+	// nameWithParam = entry.getKey().toString();
+	// index = nameWithParam.indexOf('[');
+	// if (index > 0) {
+	// nameWithParam = nameWithParam.substring(0, index).trim();
+	// }
+	// nameWithParam = "\"" + nameWithParam + "\"";
+	// methods[i] = nameWithParam + "   count: ("
+	// + entry.getValue().getCountedSizeOfEachMethodCall() + ")";
+	// methodsKey = entry.getValue().getClasses().toArray();
+	// for (int j = 0; j < methodsKey.length; j++) {
+	// Class<?> cls = ((Class<?>) methodsKey[j]);
+	// if (j == 0) {
+	// methods[i] = methods[i]
+	// + ","
+	// + cls.getName()
+	// + "   count: ("
+	// + entry.getValue()
+	// .getCountedSizeOfEachMethodCallByKey(cls)
+	// + ")";
+	// } else {
+	// methods[i] = methods[i]
+	// + "\n,,,,,,,,,"
+	// + cls.getName()
+	// + "   count: ("
+	// + entry.getValue()
+	// .getCountedSizeOfEachMethodCallByKey(cls)
+	// + ")";
+	// }
+	// }
+	// i++;
+	// }
+	// while (counter < maxCount) {
+	// if (counter == 0) {
+	// sb.append(this.getPackageName() + ",");
+	// sb.append(this.getClassName() + " count: ("
+	// + getCountedSizeCalledByTestClasses() + "),");
+	// sb.append(this.getClassType() + ",");
+	// sb.append(this.getClassCategory() + ",");
+	// if (counter < calledByTestClassSize) {
+	// sb.append(classesCalledBy[counter] + ",");
+	// } else {
+	// sb.append(",");
+	// }
+	// sb.append(innerClassSize + ",");
+	// if (counter < innerClassSize) {
+	// sb.append(innerClasses[counter] + ",");
+	// } else {
+	// sb.append(",");
+	// }
+	// sb.append(methodsSize + ",");
+	// if (counter < methodsSize) {
+	// sb.append(methods[counter] + ",");
+	// } else {
+	// sb.append(",");
+	// }
+	// } else {
+	// sb.append(",,,,");
+	// if (counter < calledByTestClassSize) {
+	// sb.append(classesCalledBy[counter] + ",");
+	// } else {
+	// sb.append(",");
+	// }
+	// sb.append(",");
+	// if (counter < innerClassSize) {
+	// sb.append(innerClasses[counter] + ",");
+	// } else {
+	// sb.append(",");
+	// }
+	// sb.append(",");
+	// if (counter < methodsSize) {
+	// sb.append(methods[counter] + ",");
+	// } else {
+	// sb.append(",");
+	// }
+	// }
+	// sb.append("\n");
+	// counter++;
+	// }
+	// sb.append("\n");
 
-	return sb.toString();
+	return this.getActualClass().getName();// sb.toString();
     }
 }

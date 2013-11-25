@@ -19,20 +19,54 @@
  */
 package tools.staticcallgraph;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.bcel.classfile.JavaClass;
 
 public class JCallGraph {
-    public static void lookInsideClass(JavaClass javaClass,
+    private List<Description> testDescriptionList = new ArrayList<Description>();
+    private List<Description> classDescriptions = new ArrayList<Description>();
+
+    // all description of classes and testclasses list
+    public JCallGraph(List<Description> classDescriptions,
+	    List<Description> testClassDescriptions) {
+	if (classDescriptions != null) {
+	    this.classDescriptions = classDescriptions;
+	}
+	if (testClassDescriptions != null) {
+	    this.testDescriptionList = testClassDescriptions;
+	}
+    }
+
+    public void lookInsideClass(JavaClass javaClass,
 	    Description entryDescription, boolean isGeneratedCode) {
-	ClassVisitor visitor = new ClassVisitor(javaClass, entryDescription,
-		true);
+	ClassVisitor visitor = new ClassVisitor(this, javaClass,
+		entryDescription, true);
 	visitor.start();
     }
 
-    public static void lookInsideClass(OPCodeDescription opCodeDescription,
+    public void lookInsideClass(OPCodeDescription opCodeDescription,
 	    Description entryDescription, JavaClass javaClass) {
-	ClassVisitor visitor = new ClassVisitor(opCodeDescription,
+	ClassVisitor visitor = new ClassVisitor(this, opCodeDescription,
 		entryDescription, javaClass);
 	visitor.start();
+    }
+
+    public Description getDescriptionByActualClassName(String name) {
+	if (!testDescriptionList.isEmpty()) {
+	    for (Description description : classDescriptions) {
+		if (description.getClassName().equals(name)) {
+		    return description;
+		}
+	    }
+	}
+	for (Description description : classDescriptions) {
+	    if (description.getClassName().equals(name)) {
+		testDescriptionList.add(description);
+		return description;
+	    }
+	}
+	return null;
     }
 }
