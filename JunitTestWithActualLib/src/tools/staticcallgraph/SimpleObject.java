@@ -19,37 +19,45 @@
  */
 package tools.staticcallgraph;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.HashSet;
 import java.util.Set;
 
 public class SimpleObject {
-    private Map<Class<?>, Integer> classes = new HashMap<Class<?>, Integer>();
+    private Set<Class<?>> classes = new HashSet<Class<?>>();
+    private String node;
+
+    public SimpleObject(String node) {
+	this.node = node;
+    }
 
     public void addClassForMethod(Class<?> clss) {
-	Integer value = 0;
-	if (this.classes.containsKey(clss)) {
-	    value = this.classes.get(clss);
-	}
-	this.classes.put(clss, ++value);
+	this.classes.add(clss);
     }
 
     public Set<Class<?>> getClasses() {
-	return this.classes.keySet();
+	return this.classes;
     }
 
-    public int getCountedSizeOfEachMethodCall() {
-	Object[] values = this.classes.values().toArray();
-	int size = 0;
-	for (Object value : values) {
-	    size += (Integer) value;
-	}
-	return size;
+    public void addNode(String node) {
+	this.node = node;
     }
 
-    public int getCountedSizeOfEachMethodCallByKey(Class<?> key) {
-	return this.classes.get(key);
+    public String getNode() {
+	return this.node;
     }
+
+    // public int getCountedSizeOfEachMethodCall() {
+    // Object[] values = this.classes.values().toArray();
+    // int size = 0;
+    // for (Object value : values) {
+    // size += (Integer) value;
+    // }
+    // return size;
+    // }
+
+    // public int getCountedSizeOfEachMethodCallByKey(Class<?> key) {
+    // return this.classes.get(key);
+    // }
 
     public int size() {
 	return this.classes.size();

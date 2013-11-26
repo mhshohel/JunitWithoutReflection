@@ -173,7 +173,9 @@ public class MainClass {
 		    .println("--------------------------------------------------");
 	    // read op code of classes
 	    System.out.println("Reading OPCODE of Test Classes");
-	    readOpCodeOfClasses();
+	    JCallGraph jcg = new JCallGraph(classDescriptions,
+		    testDescriptionList);
+	    readOpCodeOfClasses(jcg);
 	    System.out.println("Read Succesful!");
 	    System.out
 		    .println("--------------------------------------------------");
@@ -647,7 +649,7 @@ public class MainClass {
 	}
     }
 
-    private static void readOpCodeOfClasses() {
+    private static void readOpCodeOfClasses(JCallGraph jcg) {
 	// test classes from OPCode
 	for (Description description : testDescriptionList) {
 	    System.out.print("\t" + description.getActualClass().getName()
@@ -655,9 +657,8 @@ public class MainClass {
 	    // for each test class
 	    OPCodeDescription opCodeDescription = new OPCodeDescription(
 		    description);
-	    new JCallGraph(classDescriptions, testDescriptionList)
-		    .lookInsideClass(opCodeDescription, description,
-			    description.getJavaClass());
+	    jcg.lookInsideClass(opCodeDescription, description,
+		    description.getJavaClass());
 	    description.addOPCodeDescription(opCodeDescription);
 	    System.out.print("DONE!\n");
 	}

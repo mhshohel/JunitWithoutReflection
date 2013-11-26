@@ -34,6 +34,7 @@ public class OPCodeDescription {
 
     public OPCodeDescription(Description description) {
 	this.description = description;
+	// mostly constructor
 	this.oneTimeUseOnly = new OPCodeProperties();
 	this.others = new ArrayList<OPCodeProperties>();
     }

@@ -21,11 +21,15 @@ package tools.staticcallgraph;
 
 import java.io.InputStream;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.apache.bcel.classfile.ClassParser;
 import org.apache.bcel.classfile.JavaClass;
@@ -48,7 +52,7 @@ import org.apache.bcel.generic.Type;
  * 
  * @author Shohel Shamim
  */
-public class Description {
+public class Description implements Comparable<Description> {
     /**
      * <li><strong>ClassCategory</strong></li>
      * 
@@ -77,8 +81,8 @@ public class Description {
 	}
     }
 
-    /* What are the JUnit Test classes that used this class */
-    private Map<Class<?>, Integer> calledByTestClasses = new HashMap<Class<?>, Integer>();
+    /* Which classes are calling this class classes that used this class */
+    private Set<Class<?>> calledByClasses = new HashSet<Class<?>>();
     /* Keep Original Class */
     private Class<?> clas = null;
     /*
@@ -99,7 +103,7 @@ public class Description {
      * Keep list of inner classes. Key: Class Name, Value: counter (how many
      * times it used)
      */
-    private Map<Class<?>, Integer> innerClasses = new HashMap<Class<?>, Integer>();
+    private Set<Class<?>> innerClasses = new HashSet<Class<?>>();
     /* Keep Java Class */
     private JavaClass javaClass = null;
     /*
@@ -110,10 +114,33 @@ public class Description {
     /* Keep class package name */
     private String packageName = "";
     /* Keep class name with physical location */
-    private String resourceName = "";;
+    private String resourceName = "";
 
     /* Keep opcode of class */
     private OPCodeDescription myOpCode = new OPCodeDescription(this);
+    private List<String> node = new ArrayList<String>();
+
+    public void addNode(String node) {
+	if (!this.node.contains(node)) {
+	    this.node.add(node);
+	}
+    }
+
+    public List<String> getNode() {
+	Collections.sort(this.node);
+	return this.node;
+    }
+
+    public String printNode() {
+	StringBuilder sb = new StringBuilder();
+	List<String> nodes = getNode();
+	for (int i = 0; i < nodes.size(); i++) {
+	    sb.append(((i + 1) != nodes.size()) ? nodes.get(i) + "\n" : nodes
+		    .get(i));
+
+	}
+	return sb.toString();
+    }
 
     /**
      * <li><strong><i>Description</i></strong></li>
@@ -152,14 +179,14 @@ public class Description {
 	this.classCategory = classCategory;
 	// Modifier
 	int modifier = this.clas.getModifiers();
-	if (Modifier.isAbstract(modifier)) {
+	if (this.clas.isInterface()) {
+	    this.classType = "interface";
+	} else if (Modifier.isAbstract(modifier)) {
 	    this.classType = "abstract";
 	} else if (Modifier.isFinal(modifier)) {
 	    this.classType = "final";
 	} else if (this.clas.isEnum()) {
 	    this.classType = "enum";
-	} else if (this.clas.isInterface()) {
-	    this.classType = "interface";
 	} else {
 	    this.classType = "class";
 	}
@@ -167,16 +194,37 @@ public class Description {
 	for (Class<?> cls : this.clas.getDeclaredClasses()) {
 	    this.classDescriptions.add(new Description(cls,
 		    ClassCategory.REGULAR, this.classDescriptions));
-	    this.innerClasses.put(cls, 0);
+	    this.innerClasses.add(cls);
 	}
 	// Methods
 	for (Method method : this.javaClass.getMethods()) {
+	    String node = "";
+	    if (!this.clas.isInterface()) {
+		Type[] types = method.getArgumentTypes();
+		int length = types.length;
+		String type = "(";
+		for (int i = 0; i < length; i++) {
+		    type += ((i + 1) == length) ? types[i] : types[i] + ",";
+		}
+		type += ")";
+		node = this.javaClass.getClassName() + "." + method.getName()
+			+ type + method.getReturnType();
+		addNode(node);
+	    }
+
 	    // remove if method name begins with '<'
 	    String firstChar = method.getName().substring(0, 1);
-	    if (!firstChar.equalsIgnoreCase("<")) {
-		this.methods.put(method, new SimpleObject());
-	    }
+	    // if (!firstChar.equalsIgnoreCase("<")) {
+	    this.methods.put(method, new SimpleObject(node));
+	    // }
 	}
+	Collections.sort(this.node);
+    }
+
+    @Override
+    public int compareTo(Description description) {
+	return this.getActualClass().getName()
+		.compareTo(description.getActualClass().getName());
     }
 
     public Description(Description description) {
@@ -190,7 +238,7 @@ public class Description {
 	this.classCategory = description.classCategory;
 	this.innerClasses = description.innerClasses;
 	this.methods = description.methods;
-	this.calledByTestClasses = description.calledByTestClasses;
+	this.calledByClasses = description.calledByClasses;
     }
 
     /**
@@ -209,12 +257,8 @@ public class Description {
      * 
      * @author Shohel Shamim
      */
-    public void addClassToCalledByTestClasses(Class<?> clss) {
-	Integer value = 0;
-	if (this.calledByTestClasses.containsKey(clss)) {
-	    value = this.calledByTestClasses.get(clss);
-	}
-	this.calledByTestClasses.put(clss, ++value);
+    public void addClassToCalledByClasses(Class<?> clss) {
+	this.calledByClasses.add(clss);
     }
 
     public void addOPCodeDescription(OPCodeDescription opCodeDescription) {
@@ -275,17 +319,17 @@ public class Description {
 	return this.classType;
     }
 
-    // return total size of all classes called
-    private int getCountedSizeCalledByTestClasses() {
-	Object[] values = this.calledByTestClasses.values().toArray();
-	int size = 0;
-	for (Object value : values) {
-	    size += (Integer) value;
-	}
-	return size;
-    }
+    // // return total size of all classes called
+    // private int getCountedSizeCalledByTestClasses() {
+    // Object[] values = this.calledByClasses.values().toArray();
+    // int size = 0;
+    // for (Object value : values) {
+    // size += (Integer) value;
+    // }
+    // return size;
+    // }
 
-    public Map<Class<?>, Integer> getInnerClasses() {
+    public Set<Class<?>> getInnerClasses() {
 	return this.innerClasses;
     }
 
@@ -379,6 +423,10 @@ public class Description {
 	}
 
 	return null;
+    }
+
+    public SimpleObject getSimpleObjectByMethod(Method method) {
+	return this.methods.get(method);
     }
 
     public boolean isGeneratedCode() {

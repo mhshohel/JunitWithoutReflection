@@ -290,7 +290,7 @@ public class MethodVisitor extends EmptyVisitor {
 		if (who.getActualClass().equals(whom.getActualClass())) {
 		    return;
 		} else {
-		    whom.addClassToCalledByTestClasses(who.getActualClass());
+		    whom.addClassToCalledByClasses(who.getActualClass());
 		    list = whom.getOPCodeDescription().getOneTimeUseOnly();
 		}
 	    } else {
@@ -313,12 +313,12 @@ public class MethodVisitor extends EmptyVisitor {
 		    methodName, methoTypes);
 	} else if (type == INVOKEType.STATIC) {
 	    // System.out.println("!STATIC!");
-	    whom.addClassToCalledByTestClasses(who.getActualClass());
+	    whom.addClassToCalledByClasses(who.getActualClass());
 	    list = whom.getOPCodeDescription().getOtherMethodByNameAndType(
 		    methodName, methoTypes);
 	} else if (type == INVOKEType.INTERFACE) {
 	    // System.out.println("!INTERFACE!");
-	    whom.addClassToCalledByTestClasses(who.getActualClass());
+	    whom.addClassToCalledByClasses(who.getActualClass());
 	    list = whom.getOPCodeDescription().getOtherMethodByNameAndType(
 		    methodName, methoTypes);
 	}

@@ -36,6 +36,8 @@ public abstract class INVOKEProperties {
     private INVOKEMehtodProperties methodCallTo = null;
     private MethodGen methodGen = null;
     protected INVOKEType type = null;
+    private String methodCallingFromNode = "";
+    private String methodCallToNode = "";
 
     public INVOKEProperties(JavaClass javaClass, MethodGen methodGen,
 	    String classCalling) {
@@ -52,13 +54,18 @@ public abstract class INVOKEProperties {
 
     protected void addMethodCall(Description description, String name,
 	    Type[] types) {
+	SimpleObject so = description.getSimpleObjectByNameAndTypeArgs(name,
+		types);
+	this.methodCallToNode = so.getNode();
 	this.methodCallTo = new INVOKEMehtodProperties(description, name, types);
     }
 
     protected void addMethodCalling(Description description) {
+	SimpleObject so = description.getSimpleObjectByNameAndTypeArgs(
+		this.methodGen.getName(), this.methodGen.getArgumentTypes());
+	this.methodCallingFromNode = so.getNode();
 	this.methodCallingFrom = new INVOKEMehtodProperties(description,
 		this.methodGen.getName(), this.methodGen.getArgumentTypes());
-	String n = this.methodGen.getName();
     }
 
     public String getClassNameCallFrom() {

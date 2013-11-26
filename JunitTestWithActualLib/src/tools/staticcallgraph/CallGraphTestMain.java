@@ -23,6 +23,7 @@ import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -40,7 +41,7 @@ public class CallGraphTestMain {
      */
     public static void main(String[] args) {
 	file = new File("C:\\temp\\o");
-	System.out.println("Reading class files\n");
+	// System.out.println("Reading class files\n");
 	readFiles(file, "", "");
 	for (Class<?> cls : allClasses) {
 	    try {
@@ -50,24 +51,42 @@ public class CallGraphTestMain {
 		e.printStackTrace();
 	    }
 	}
-	System.out.println("\nReading bytecode of class\n");
-	readOpCodeOfClasses();
-	System.out.println("\n\nDONE!");
+	// System.out.println("\nReading bytecode of class\n");
+	JCallGraph jcg = new JCallGraph(classDescriptions, testDescriptionList);
+	readOpCodeOfClasses(jcg);
+	// System.out.println("\n\nDONE!\n\n");
+
+	// Set<Class> s = new HashSet<Class>();
+	// s.add(Description.class);
+	// s.add(ClassVisitor.class);
+	// s.add(Description.class);
+	// s.add(Description.class);
+	// for (Class<?> c : s) {
+	// System.out.println(c);
+	// }
+
+	Collections.sort(classDescriptions);
+	System.out.println("List of Nodes \n-------------\t");
+	for (Description description : classDescriptions) {
+	    String val = description.printNode();
+	    if (!val.equalsIgnoreCase("")) {
+		System.out.println(val);
+	    }
+	}
     }
 
-    private static void readOpCodeOfClasses() {
+    private static void readOpCodeOfClasses(JCallGraph jcg) {
 	// test classes from OPCode
 	for (Description description : classDescriptions) {
-	    System.out.print("\t" + description.getActualClass().getName()
-		    + ": ");
+	    // System.out.print("\t" + description.getActualClass().getName()
+	    // + ": ");
 	    // for each test class
 	    OPCodeDescription opCodeDescription = new OPCodeDescription(
 		    description);
-	    new JCallGraph(classDescriptions, testDescriptionList)
-		    .lookInsideClass(opCodeDescription, description,
-			    description.getJavaClass());
+	    jcg.lookInsideClass(opCodeDescription, description,
+		    description.getJavaClass());
 	    description.addOPCodeDescription(opCodeDescription);
-	    System.out.print("DONE!\n");
+	    // System.out.print("DONE!\n");
 	}
     }
 
@@ -90,7 +109,7 @@ public class CallGraphTestMain {
 			    @SuppressWarnings("resource")
 			    Class<?> clas = new URLClassLoader(urls)
 				    .loadClass(cls);
-			    System.out.println("\t" + clas.getName());
+			    // System.out.println("\t" + clas.getName());
 			    allClasses.add(clas);
 			    if (cls.equalsIgnoreCase(nameFilter)) {
 				// testClasses.add(clas);

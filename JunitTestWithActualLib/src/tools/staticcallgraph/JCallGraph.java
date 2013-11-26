@@ -20,6 +20,7 @@
 package tools.staticcallgraph;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.bcel.classfile.JavaClass;
@@ -37,6 +38,20 @@ public class JCallGraph {
 	if (testClassDescriptions != null) {
 	    this.testDescriptionList = testClassDescriptions;
 	}
+    }
+
+    private List<String> node = new ArrayList<String>();
+    private List<String> edge = new ArrayList<String>();
+
+    public void addNode(String node) {
+	if (!this.node.contains(node)) {
+	    this.node.add(node);
+	}
+    }
+
+    public List<String> getNode() {
+	Collections.sort(this.node);
+	return this.node;
     }
 
     public void lookInsideClass(JavaClass javaClass,

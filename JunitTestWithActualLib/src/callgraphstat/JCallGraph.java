@@ -26,7 +26,7 @@ import java.util.Enumeration;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
-import observer.Adder;
+import observer.Bag;
 
 import org.apache.bcel.classfile.ClassParser;
 import org.apache.bcel.classfile.JavaClass;
@@ -54,7 +54,7 @@ public class JCallGraph {
 		    if (!entry.getName().endsWith(".class"))
 			continue;
 
-		    Class<?> cls = Adder.class;
+		    Class<?> cls = Bag.class;
 
 		    String resourceName = cls.getName().replace('.', '/')
 			    + ".class";
