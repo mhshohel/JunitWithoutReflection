@@ -19,8 +19,8 @@
  */
 package tools.staticcallgraph;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.apache.bcel.classfile.JavaClass;
 import org.apache.bcel.generic.ConstantPoolGen;
@@ -32,22 +32,53 @@ import org.apache.bcel.generic.MethodGen;
 import org.apache.bcel.generic.Type;
 
 public class OPCodeProperties {
-    private List<INVOKEProperties> interfaceCall = new ArrayList<INVOKEProperties>();
+    private Set<INVOKEProperties> interfaceCall = new HashSet<INVOKEProperties>();
     // keep method name with parameters type, this method is the method which is
     // inside the class
     // ex: TestClass.method(); here method()
     private INVOKEMehtodProperties method = null;
-    private List<INVOKEProperties> methodCall = new ArrayList<INVOKEProperties>();
-    private List<INVOKEProperties> objectCall = new ArrayList<INVOKEProperties>();
-    private List<INVOKEProperties> staticCall = new ArrayList<INVOKEProperties>();
+    private Set<INVOKEProperties> methodCall = new HashSet<INVOKEProperties>();
+    private Set<INVOKEProperties> objectCall = new HashSet<INVOKEProperties>();
+    private Set<INVOKEProperties> staticCall = new HashSet<INVOKEProperties>();
+
+    public String getEdges() {
+	StringBuilder sb = new StringBuilder();
+	if (!interfaceCall.isEmpty())
+	    sb.append(readINVOKEProperties(interfaceCall));
+	if (!methodCall.isEmpty())
+	    sb.append(readINVOKEProperties(methodCall));
+	if (!objectCall.isEmpty())
+	    sb.append(readINVOKEProperties(objectCall));
+	if (!staticCall.isEmpty())
+	    sb.append(readINVOKEProperties(staticCall));
+	return sb.toString();
+    }
+
+    private String readINVOKEProperties(Set<INVOKEProperties> ip) {
+	StringBuilder sb = new StringBuilder();
+	String val = "";
+	int count = 0;
+	for (INVOKEProperties i : ip) {
+	    val = i.getEdge();
+	    sb.append((count + 1 == ip.size()) ? val : val + "\n");
+	    count++;
+	}
+	return sb.toString();
+    }
 
     public void addInterfaceCall(Description parentDescription,
 	    Description callingDescription, JavaClass javaClass,
 	    MethodGen methodGen, ConstantPoolGen constantPoolGen,
 	    INVOKEINTERFACE interfaceCall) {
-	this.interfaceCall.add(new INVOKEINTERFACEProperties(parentDescription,
+	INVOKEProperties ip = new INVOKEINTERFACEProperties(parentDescription,
 		callingDescription, javaClass, methodGen, constantPoolGen,
-		interfaceCall));
+		interfaceCall);
+	for (INVOKEProperties i : this.interfaceCall) {
+	    if (i.contains(ip)) {
+		return;
+	    }
+	}
+	this.interfaceCall.add(ip);
     }
 
     public void addMethod(Description description, String name, Type[] types) {
@@ -58,30 +89,48 @@ public class OPCodeProperties {
 	    Description callingDescription, JavaClass javaClass,
 	    MethodGen methodGen, ConstantPoolGen constantPoolGen,
 	    INVOKESPECIAL objectCall) {
-	this.objectCall.add(new INVOKESPECIALProperties(parentDescription,
+	INVOKEProperties ip = new INVOKESPECIALProperties(parentDescription,
 		callingDescription, javaClass, methodGen, constantPoolGen,
-		objectCall));
+		objectCall);
+	for (INVOKEProperties i : this.objectCall) {
+	    if (i.contains(ip)) {
+		return;
+	    }
+	}
+	this.objectCall.add(ip);
     }
 
     public void addStaticCall(Description parentDescription,
 	    Description callingDescription, JavaClass javaClass,
 	    MethodGen methodGen, ConstantPoolGen constantPoolGen,
 	    INVOKESTATIC staticCall) {
-	this.staticCall.add(new INVOKESTATICProperties(parentDescription,
+	INVOKEProperties ip = new INVOKESTATICProperties(parentDescription,
 		callingDescription, javaClass, methodGen, constantPoolGen,
-		staticCall));
+		staticCall);
+	for (INVOKEProperties i : this.staticCall) {
+	    if (i.contains(ip)) {
+		return;
+	    }
+	}
+	this.staticCall.add(ip);
     }
 
     public void addtMethodCall(Description parentDescription,
 	    Description callingDescription, JavaClass javaClass,
 	    MethodGen methodGen, ConstantPoolGen constantPoolGen,
 	    INVOKEVIRTUAL methodCall) {
-	this.methodCall.add(new INVOKEVIRTUALProperties(parentDescription,
+	INVOKEProperties ip = new INVOKEVIRTUALProperties(parentDescription,
 		callingDescription, javaClass, methodGen, constantPoolGen,
-		methodCall));
+		methodCall);
+	for (INVOKEProperties i : this.methodCall) {
+	    if (i.contains(ip)) {
+		return;
+	    }
+	}
+	this.methodCall.add(ip);
     }
 
-    public List<INVOKEProperties> getInterfaceCall() {
+    public Set<INVOKEProperties> getInterfaceCall() {
 	return this.interfaceCall;
     }
 
@@ -89,16 +138,16 @@ public class OPCodeProperties {
 	return this.method;
     }
 
-    public List<INVOKEProperties> getMethodCall() {
+    public Set<INVOKEProperties> getMethodCall() {
 	return this.methodCall;
     }
 
-    public List<INVOKEProperties> getObjectCall() {
+    public Set<INVOKEProperties> getObjectCall() {
 	// SPECIAL
 	return this.objectCall;
     }
 
-    public List<INVOKEProperties> getStaticCall() {
+    public Set<INVOKEProperties> getStaticCall() {
 	return this.staticCall;
     }
 }

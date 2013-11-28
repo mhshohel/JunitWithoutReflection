@@ -199,7 +199,7 @@ public class Description implements Comparable<Description> {
 	// Methods
 	for (Method method : this.javaClass.getMethods()) {
 	    String node = "";
-	    if (!this.clas.isInterface()) {
+	    //if (!this.clas.isInterface()) {
 		Type[] types = method.getArgumentTypes();
 		int length = types.length;
 		String type = "(";
@@ -210,7 +210,7 @@ public class Description implements Comparable<Description> {
 		node = this.javaClass.getClassName() + "." + method.getName()
 			+ type + method.getReturnType();
 		addNode(node);
-	    }
+	    //}
 
 	    // remove if method name begins with '<'
 	    String firstChar = method.getName().substring(0, 1);
@@ -439,6 +439,21 @@ public class Description implements Comparable<Description> {
 
     public boolean isTestClass() {
 	return (this.classCategory == ClassCategory.TEST);
+    }
+
+    public String getEdages() {
+	StringBuilder sb = new StringBuilder();
+	OPCodeProperties op = this.myOpCode.getOneTimeUseOnly();
+	if (!op.getEdges().isEmpty()) {
+	    sb.append(op.getEdges()).append("\n");
+	}
+	for (OPCodeProperties opc : this.myOpCode.getOtherMethodInvocations()) {
+	    if (!opc.getEdges().isEmpty()) {
+		sb.append(opc.getEdges()).append("\n");
+	    }
+	}
+
+	return sb.toString();
     }
 
     /**

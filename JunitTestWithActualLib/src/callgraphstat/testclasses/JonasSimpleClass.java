@@ -17,7 +17,7 @@
  * Linnaeus University, Växjö, Sweden
  *
  */
-package callgraphstat;
+package callgraphstat.testclasses;
 
 public class JonasSimpleClass {
     void someMethod() {

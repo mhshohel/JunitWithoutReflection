@@ -17,7 +17,7 @@
  * Linnaeus University, Växjö, Sweden
  *
  */
-package callgraphstat;
+package callgraphstat.testclasses;
 
 public class JonasBClass implements JonasInterface {
 
@@ -27,4 +27,10 @@ public class JonasBClass implements JonasInterface {
 
     public void methodB() {
     }
+
+    @Override
+    public void intrfaceCheckMethod(JonasInterface ji, JonasInterface jj,
+	    JonasInterface jc, JonasInterface jf) {
+    }
+
 }

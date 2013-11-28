@@ -26,6 +26,7 @@ import org.apache.bcel.classfile.Field;
 import org.apache.bcel.classfile.JavaClass;
 import org.apache.bcel.classfile.Method;
 import org.apache.bcel.generic.ConstantPoolGen;
+import org.apache.bcel.generic.FieldGen;
 import org.apache.bcel.generic.MethodGen;
 
 public class ClassVisitor extends EmptyVisitor {
@@ -42,6 +43,11 @@ public class ClassVisitor extends EmptyVisitor {
     public void visitJavaClass(JavaClass jc) {
 	jc.getConstantPool().accept(this);
 	Field[] fields = jc.getFields();
+
+	FieldGen fg = new FieldGen(fields[2], constants);
+
+	System.out.println();
+
 	// for (int i = 0; i < fields.length; i++) {
 	// String name = fields[i].getName();
 	// // if (name.charAt(0) != '<')
@@ -59,6 +65,7 @@ public class ClassVisitor extends EmptyVisitor {
 	    Method m = methods[i];
 	    // if (name.charAt(0) != '<')
 	    methods[i].accept(this);
+	    System.out.println("\t\t\t---------------Fin----------------");
 	}
     }
 

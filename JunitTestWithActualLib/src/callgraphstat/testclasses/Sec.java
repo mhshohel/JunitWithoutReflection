@@ -4,9 +4,9 @@
  *
  * @PackageName callgraphstat
  *
- * @FileName JonasCClass.java
+ * @FileName Sec.java
  * 
- * @FileCreated Nov 21, 2013
+ * @FileCreated Nov 2, 2013
  *
  * @Author MD. SHOHEL SHAMIM
  *
@@ -17,15 +17,21 @@
  * Linnaeus University, Växjö, Sweden
  *
  */
-package callgraphstat;
+package callgraphstat.testclasses;
 
-public class JonasCClass implements JonasInterface {
+class Sec {
 
-    @Override
-    public void interfaceMethod() {
+    public Sec() {
+
     }
 
-    public void methodC() {
+    public Sec(Sec s) {
+
     }
 
+    public void nurse(String a, WorldClass w) {
+    }
+
+    public void dck() {
+    }
 }

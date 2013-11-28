@@ -46,6 +46,12 @@ public abstract class INVOKEProperties {
 	this.classCalling = classCalling;
     }
 
+    public boolean contains(INVOKEProperties ip) {
+	return (ip.methodCallingFromNode
+		.equalsIgnoreCase(this.methodCallingFromNode) && ip.methodCallToNode
+		.equalsIgnoreCase(this.methodCallToNode));
+    }
+
     // this is to get description of the class quickly, it the call object not
     // calling from
     protected void addDescription(Description description) {
@@ -88,6 +94,10 @@ public abstract class INVOKEProperties {
     // call from
     public INVOKEMehtodProperties getMethodCallTo() {
 	return this.methodCallTo;
+    }
+
+    public String getEdge() {
+	return this.methodCallingFromNode + " ---> " + this.methodCallToNode;
     }
 
     public abstract INVOKEType getType();

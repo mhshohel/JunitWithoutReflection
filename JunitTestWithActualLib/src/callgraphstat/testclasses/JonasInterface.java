@@ -17,11 +17,14 @@
  * Linnaeus University, Växjö, Sweden
  *
  */
-package callgraphstat;
+package callgraphstat.testclasses;
 
 public interface JonasInterface {
     Sec s = new Sec();
     JonasBClass jie = new JonasBClass();
 
     void interfaceMethod();
+
+    public void intrfaceCheckMethod(JonasInterface ji, JonasInterface jj,
+	    JonasInterface jc, JonasInterface jf);
 }

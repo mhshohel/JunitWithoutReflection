@@ -255,7 +255,8 @@ public class JasminVisitor extends EmptyVisitor {
 			    + " " + str);
 		}
 	    } else
-		out.println("\t" + inst.toString(cp.getConstantPool()));
+		System.out.println("\t" + inst.toString(cp.getConstantPool()));
+	    out.println("\t" + inst.toString(cp.getConstantPool()));
 	}
 
 	out.print("\n");

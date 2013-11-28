@@ -20,68 +20,88 @@
 package callgraphstat;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
-import java.util.Enumeration;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
-
-import observer.Bag;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.bcel.classfile.ClassParser;
 import org.apache.bcel.classfile.JavaClass;
 
+import callgraphstat.testclasses.JonasTestMain;
+
 public class JCallGraph {
+    private static File file;
+    private static List<Description> classDescriptions = new ArrayList<Description>();
+
     public static void main(String[] args) {
-	ClassParser cp;
+	file = new File(
+		"G:\\lnu\\5DV001 - Thesis Project\\Thesis - Jonas\\ThesisBackup\\JunitWithoutReflection.git.first\\JunitTestWithActualLib\\bin\\callgraphstat");
+	readFiles(file, "", "callgraphstat");
 	try {
-	    for (String arg : args) {
+	    Class<?> cls = null;
+	    // for (Class<?> c : allClasses) {
+	    // if (c.getSimpleName().equalsIgnoreCase("TestDFS")) {
+	    // cls = c;
+	    // break;
+	    // }
+	    // }
 
-		File f = new File(arg);
+	    // HINTS: DO NOT GET NODE FOR INTERFACE
+	    cls = JonasTestMain.class;
+	    String resourceName = cls.getName().replace('.', '/') + ".class";
+	    JavaClass javaClass = null;
+	    try {
+		InputStream classInputStream = cls.getClassLoader()
+			.getResourceAsStream(resourceName);
+		javaClass = new ClassParser(classInputStream, resourceName)
+			.parse();
+	    } catch (Exception e) {
 
-		if (!f.exists()) {
-		    System.err.println("Jar file " + arg + " does not exist");
-		}
+	    }
+	    ClassVisitor visitor = new ClassVisitor(javaClass);
+	    visitor.start();
+	} catch (Exception e) {
+	    e.printStackTrace();
+	}
+    }
 
-		JarFile jar = new JarFile(f);
-
-		Enumeration<JarEntry> entries = jar.entries();
-		while (entries.hasMoreElements()) {
-		    JarEntry entry = entries.nextElement();
-		    if (entry.isDirectory())
-			continue;
-
-		    if (!entry.getName().endsWith(".class"))
-			continue;
-
-		    Class<?> cls = Bag.class;
-
-		    String resourceName = cls.getName().replace('.', '/')
-			    + ".class";
-		    JavaClass javaClass = null;
-		    try {
-			InputStream classInputStream = cls.getClassLoader()
-				.getResourceAsStream(resourceName);
-			javaClass = new ClassParser(classInputStream,
-				resourceName).parse();
-		    } catch (Exception e) {
-
+    private static void readFiles(final File folder, final String nameFilter,
+	    final String pack) {
+	try {
+	    String pac = (pack.trim().equalsIgnoreCase("") ? "" : pack
+		    .concat("."));
+	    for (final File fileEntry : folder.listFiles()) {
+		if (fileEntry.isDirectory()) {
+		    if (fileEntry.getName().equalsIgnoreCase("testclasses")) {
+			readFiles(fileEntry, nameFilter,
+				pac.concat(fileEntry.getName()));
 		    }
-
-		    // InputStream classInputStream =
-		    // cls.getClassLoader()
-		    // .getResourceAsStream(resourceName);
-		    // cp = new ClassParser(classInputStream, resourceName);
-
-		    cp = new ClassParser(arg, entry.getName());
-		    JavaClass jc = cp.parse();
-		    ClassVisitor visitor = new ClassVisitor(javaClass);
-		    visitor.start();
-		    break;
+		} else {
+		    if (pac.equalsIgnoreCase("callgraphstat.testclasses."))
+			if (fileEntry.getName().endsWith(".class")) {
+			    try {
+				URL url = file.toURI().toURL();
+				URL[] urls = new URL[] { url };
+				String cls = pac.concat(fileEntry.getName()
+					.replaceAll(".class", ""));
+				@SuppressWarnings("resource")
+				Class<?> clas = new URLClassLoader(urls)
+					.loadClass(cls);
+				// System.out.println("\t" + clas.getName());
+				classDescriptions.add(new Description(clas,
+					classDescriptions));
+				if (cls.equalsIgnoreCase(nameFilter)) {
+				    // testClasses.add(clas);
+				}
+			    } catch (Exception e) {
+				e.printStackTrace();
+			    }
+			}
 		}
 	    }
-	} catch (IOException e) {
-	    System.err.println("Error while processing jar: " + e.getMessage());
+	} catch (Exception e) {
 	    e.printStackTrace();
 	}
     }

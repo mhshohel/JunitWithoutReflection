@@ -40,7 +40,7 @@ public class CallGraphTestMain {
      * @param CallGraphTestMain
      */
     public static void main(String[] args) {
-	file = new File("C:\\temp\\o");
+	file = new File("C:\\temp\\a");
 	// System.out.println("Reading class files\n");
 	readFiles(file, "", "");
 	for (Class<?> cls : allClasses) {
@@ -71,6 +71,14 @@ public class CallGraphTestMain {
 	    String val = description.printNode();
 	    if (!val.equalsIgnoreCase("")) {
 		System.out.println(val);
+	    }
+	}
+
+	System.out.println();
+	for (Description description : classDescriptions) {
+	    String edges = description.getEdages().trim();
+	    if (!edges.equalsIgnoreCase("")) {
+		System.out.println(edges);
 	    }
 	}
     }
