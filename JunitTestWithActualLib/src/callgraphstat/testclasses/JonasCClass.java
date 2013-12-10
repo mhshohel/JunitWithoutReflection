@@ -19,7 +19,7 @@
  */
 package callgraphstat.testclasses;
 
-public class JonasCClass implements JonasInterface {
+public class JonasCClass implements JonasInterface, JInterfae {
 
     @Override
     public void interfaceMethod() {
@@ -31,6 +31,10 @@ public class JonasCClass implements JonasInterface {
     @Override
     public void intrfaceCheckMethod(JonasInterface ji, JonasInterface jj,
 	    JonasInterface jc, JonasInterface jf) {
+    }
+
+    @Override
+    public void antMet() {
     }
 
 }

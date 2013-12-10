@@ -24,9 +24,9 @@ import org.apache.bcel.classfile.ConstantPool;
 import org.apache.bcel.classfile.EmptyVisitor;
 import org.apache.bcel.classfile.Field;
 import org.apache.bcel.classfile.JavaClass;
+import org.apache.bcel.classfile.LocalVariableTable;
 import org.apache.bcel.classfile.Method;
 import org.apache.bcel.generic.ConstantPoolGen;
-import org.apache.bcel.generic.FieldGen;
 import org.apache.bcel.generic.MethodGen;
 
 public class ClassVisitor extends EmptyVisitor {
@@ -43,26 +43,11 @@ public class ClassVisitor extends EmptyVisitor {
     public void visitJavaClass(JavaClass jc) {
 	jc.getConstantPool().accept(this);
 	Field[] fields = jc.getFields();
-
-	FieldGen fg = new FieldGen(fields[2], constants);
-
-	System.out.println();
-
-	// for (int i = 0; i < fields.length; i++) {
-	// String name = fields[i].getName();
-	// // if (name.charAt(0) != '<')
-	// fields[i].accept(this);
-	// }
-	// System.err.println(fields[0].isSynthetic());
-	try {
-	    JavaClass[] interfaces = jc.getAllInterfaces();
-	} catch (ClassNotFoundException e) {
-	    e.printStackTrace();
-	}
 	Method[] methods = jc.getMethods();
 	for (int i = 0; i < methods.length; i++) {
 	    String name = methods[i].getName();
 	    Method m = methods[i];
+	    LocalVariableTable s = m.getLocalVariableTable();
 	    // if (name.charAt(0) != '<')
 	    methods[i].accept(this);
 	    System.out.println("\t\t\t---------------Fin----------------");
@@ -75,19 +60,7 @@ public class ClassVisitor extends EmptyVisitor {
 	    if (constant == null)
 		continue;
 	    if (constant.getTag() == 7) {
-		String referencedClass = constantPool
-			.constantToString(constant);
-
-		String input = referencedClass;
-
-		int in = input.indexOf('.');
-		String word = input.substring(0, in);
-		String rest = input.substring(in);
-
-		// if (!word.equalsIgnoreCase("java")) {
-		// System.out.println(String.format(classReferenceFormat,
-		// referencedClass + "   " + word));
-		// }
+		constantPool.constantToString(constant);
 	    }
 	}
     }

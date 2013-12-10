@@ -66,7 +66,9 @@ public class Description implements Comparable<Description> {
     private Class<?> clas = null;
     private JavaClass javaClass = null;
     private ClassVisitor classVisitor = null;
-    private List<Description> classDescriptions = null;
+    private Map<String, Description> classDescriptions = null;
+    private List<Description> interfaces = new ArrayList<Description>();
+    private List<Description> superClass = new ArrayList<Description>();
     private ClassCategory classCategory = null;
     private InputStream classInputStream = null;
     private ClassType classType = null;
@@ -74,25 +76,25 @@ public class Description implements Comparable<Description> {
     private List<String> nodes = new ArrayList<String>();
 
     public Description(Class<?> clas, ClassCategory classCategory,
-	    List<Description> classDescriptions) throws Exception {
+	    Map<String, Description> classDescriptions) throws Exception {
 	this.classCategory = classCategory;
 	initialize(clas, classDescriptions);
     }
 
-    public Description(Class<?> clas, List<Description> classDescriptions)
+    public Description(Class<?> clas, Map<String, Description> classDescriptions)
 	    throws Exception {
 	this.classCategory = ClassCategory.REGULAR;
 	initialize(clas, classDescriptions);
     }
 
-    private void initialize(Class<?> clas, List<Description> classDescriptions)
-	    throws Exception {
+    private void initialize(Class<?> clas,
+	    Map<String, Description> classDescriptions) throws Exception {
 	this.clas = clas;
 	this.classDescriptions = classDescriptions;
 	try {
 	    String resourceName = clas.getName().replace('.', '/') + ".class";
-	    InputStream classInputStream = clas.getClassLoader()
-		    .getResourceAsStream(resourceName);
+	    this.classInputStream = clas.getClassLoader().getResourceAsStream(
+		    resourceName);
 	    this.javaClass = new ClassParser(classInputStream, resourceName)
 		    .parse();
 	    this.classVisitor = new ClassVisitor(javaClass);
@@ -113,7 +115,7 @@ public class Description implements Comparable<Description> {
 	}
 	// Inner Class as Application
 	for (Class<?> cls : this.clas.getDeclaredClasses()) {
-	    this.classDescriptions.add(new Description(cls,
+	    this.classDescriptions.put(cls.getName(), new Description(cls,
 		    ClassCategory.REGULAR, this.classDescriptions));
 	}
 	if (!this.clas.isInterface()) {
@@ -128,16 +130,77 @@ public class Description implements Comparable<Description> {
 	Collections.sort(this.nodes);
     }
 
+    public void initializeInterfacesAndSuperClasses() throws Exception {
+	Description description = null;
+	for (Class<?> cls : this.clas.getInterfaces()) {
+	    description = this.classDescriptions.get(cls.getName());
+	    if (description != null) {
+		this.interfaces.add(description);
+	    }
+	}
+	Class<?> superClass = this.clas.getSuperclass();
+	if (superClass != null) {
+	    description = this.classDescriptions.get(superClass.getName());
+	    if (description != null) {
+		this.superClass.add(description);
+	    }
+	}
+    }
+
+    public List<Description> getInterfaces() {
+	return this.interfaces;
+    }
+
+    public List<Description> getSuperClass() {
+	return this.superClass;
+    }
+
     public List<String> getNode() {
 	return this.nodes;
     }
 
     public String printNode() {
 	StringBuilder sb = new StringBuilder();
-	for (String node : this.nodes) {
-	    sb.append(node).append("\n");
+	int size = this.nodes.size();
+	String val = "";
+	for (int i = 0; i < size; i++) {
+	    val = this.nodes.get(i);
+	    sb.append(((i + 1) == size) ? val : (val + "\n"));
 	}
+
 	return sb.toString();
+    }
+
+    public Description getDescriptionByJavaClass(JavaClass jc) {
+	for (Entry<String, Description> entry : this.classDescriptions
+		.entrySet()) {
+	    if (entry.getValue().getJavaClass().equals(jc)) {
+		return entry.getValue();
+	    }
+	}
+	return null;
+    }
+
+    public Description getDescriptionByClass(Class<?> cls) {
+	for (Entry<String, Description> entry : this.classDescriptions
+		.entrySet()) {
+	    if (entry.getValue().getActualClass().equals(cls)) {
+		return entry.getValue();
+	    }
+	}
+	return null;
+    }
+
+    public void getClassIniatialEdges() {
+
+    }
+
+    public void getMyEdges() {
+
+    }
+
+    public void getEdgesByTrace() {
+
     }
 
     @Override
@@ -213,7 +276,7 @@ public class Description implements Comparable<Description> {
 	return this.methods;
     }
 
-    public Node getSimpleObjectByNameAndTypeArgs(String methodName,
+    public Node getNodeByNameAndTypeArgs(String methodName,
 	    Type[] methodTypeArgs) {
 	String name = null;
 	Type[] types = null;
